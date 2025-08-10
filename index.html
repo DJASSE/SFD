@@ -1,1397 +1,2164 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRASIAS</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            direction: rtl;
-            padding: 20px;
-        }
-
-        .box {
-            background: white;
-            padding: 30px 25px;
-            border-radius: 20px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            animation: fadeIn 0.6s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        h2 {
-            margin-bottom: 25px;
-            color: #4a5568;
-            font-weight: 600;
-            font-size: 24px;
-        }
-
-        input, button, textarea, select {
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            font-size: 16px;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-            font-family: 'Cairo', sans-serif;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s ease;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .choice {
-            text-align: right;
-            margin: 25px 0;
-        }
-
-        .choice label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background-color 0.2s ease;
-        }
-
-        .choice label:hover {
-            background-color: #f7fafc;
-        }
-
-        .choice input[type="radio"] {
-            width: auto;
-            margin-left: 10px;
-            margin-bottom: 0;
-        }
-
-        .declaration-box {
-            margin-top: 20px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: right;
-            display: none;
-            border-right: 4px solid #667eea;
-            line-height: 1.6;
-        }
-
-        #mapPage {
-            display: none;
-            height: 100vh;
-            width: 100vw;
-            flex-direction: row;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-        }
-
-        #map {
-            width: 65%;
-            height: 100vh;
-        }
-
-        .sidebar {
-            width: 35%;
-            background: #fff;
-            padding: 30px;
-            overflow-y: auto;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-        }
-
-        .sidebar h3 {
-            color: #4a5568;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .sidebar label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2d3748;
-        }
-
-        #passengerPage, #driverPage, #mapPage {
-            display: none;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            margin-bottom: 15px;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            opacity: 0;
-            position: absolute;
-            z-index: -1;
-        }
-
-        .file-input-label {
-            display: block;
-            padding: 15px;
-            background: #f8f9fa;
-            border: 2px dashed #cbd5e0;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .file-input-label:hover {
-            border-color: #667eea;
-            background: #edf2f7;
-        }
-
-        .success-message {
-            background: #c6f6d5;
-            color: #22543d;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .error-message {
-            background: #fed7d7;
-            color: #742a2a;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .alternative-login {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .alternative-login h3 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #4a5568;
-        }
-
-        .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
-            display: none;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .driver-card {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .driver-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        .driver-card.selected {
-            border-color: #48bb78;
-            background: #f0fff4;
-        }
-
-        .driver-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .driver-name {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 16px;
-        }
-
-        .driver-distance {
-            background: #667eea;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-        }
-
-        .car-info {
-            color: #718096;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .driver-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .call-btn {
-            background: #48bb78;
-            color: white;
-        }
-
-        .call-btn:hover {
-            background: #38a169;
-        }
-
-        .chat-btn {
-            background: #4299e1;
-            color: white;
-        }
-
-        .chat-btn:hover {
-            background: #3182ce;
-        }
-
-        .select-btn {
-            background: #667eea;
-            color: white;
-        }
-
-        .select-btn:hover {
-            background: #5a67d8;
-        }
-
-        .cancel-btn {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .cancel-btn:hover {
-            background: #c53030;
-        }
-
-        .trip-status {
-            background: #e6fffa;
-            border: 1px solid #81e6d9;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .trip-status.active {
-            background: #f0fff4;
-            border-color: #9ae6b4;
-        }
-
-        .distance-calculator {
-            background: #f8f9fa;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .distance-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .distance-input input {
-            flex: 1;
-            margin: 0;
-        }
-
-        .price-display {
-            background: #667eea;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 18px;
-        }
-
-        .destination-input {
-            background: #f8f9fa;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .destination-input h4 {
-            margin: 0 0 10px 0;
-            color: #2d3748;
-        }
-
-        .destination-display {
-            background: #e6fffa;
-            border: 1px solid #81e6d9;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .map-layers {
-            background: #f8f9fa;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .map-layers h4 {
-            margin: 0 0 10px 0;
-            color: #2d3748;
-        }
-
-        .layer-option {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .layer-option input[type="radio"] {
-            width: auto;
-            margin-left: 10px;
-            margin-bottom: 0;
-        }
-
-        .chat-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 400px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            display: none;
-            flex-direction: column;
-            z-index: 1000;
-        }
-
-        .chat-header {
-            background: #667eea;
-            color: white;
-            padding: 15px;
-            border-radius: 12px 12px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            max-height: 250px;
-        }
-
-        .chat-input-container {
-            padding: 15px;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            margin: 0;
-        }
-
-        .send-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 0;
-            width: auto;
-        }
-
-        .message {
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            max-width: 80%;
-        }
-
-        .message.sent {
-            background: #667eea;
-            color: white;
-            margin-left: auto;
-            text-align: left;
-        }
-
-        .message.received {
-            background: #f7fafc;
-            color: #2d3748;
-            margin-right: auto;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            border-right: 4px solid #667eea;
-            z-index: 1000;
-            max-width: 350px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .notification-title {
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-
-        .notification-content {
-            color: #4a5568;
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-
-        .notification-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .accept-btn {
-            background: #48bb78;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .reject-btn {
-            background: #e53e3e;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            #mapPage {
-                flex-direction: column;
-            }
-
-            #map {
-                width: 100%;
-                height: 60vh;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: 40vh;
-                padding: 20px;
-            }
-
-            .box {
-                margin: 10px;
-                padding: 20px;
-            }
-
-            .chat-container {
-                width: 90%;
-                right: 5%;
-                left: 5%;
-            }
-
-            .notification {
-                right: 10px;
-                left: 10px;
-                max-width: none;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRASIAS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* نفس الـ CSS السابق - لم يتغير */
+* {
+box-sizing: border-box;
+}
+
+body {
+font-family: 'Cairo', sans-serif;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+margin: 0;
+min-height: 100vh;
+display: flex;
+align-items: center;
+justify-content: center;
+direction: rtl;
+padding: 20px;
+}
+
+.box {
+background: white;
+padding: 30px 25px;
+border-radius: 20px;
+box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+width: 100%;
+max-width: 400px;
+text-align: center;
+animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+from {
+opacity: 0;
+transform: translateY(30px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+h2 {
+margin-bottom: 25px;
+color: #4a5568;
+font-weight: 600;
+font-size: 24px;
+}
+
+input, button, textarea, select {
+width: 100%;
+padding: 15px;
+border-radius: 12px;
+margin-bottom: 15px;
+font-size: 16px;
+border: 2px solid #e2e8f0;
+transition: all 0.3s ease;
+font-family: 'Cairo', sans-serif;
+}
+
+input:focus, textarea:focus, select:focus {
+border-color: #667eea;
+outline: none;
+box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+button {
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
+border: none;
+cursor: pointer;
+font-weight: 600;
+transition: transform 0.2s ease;
+}
+
+button:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+button:active {
+transform: translateY(0);
+}
+
+.choice {
+text-align: right;
+margin: 25px 0;
+}
+
+.choice label {
+display: flex;
+align-items: center;
+margin-bottom: 12px;
+font-size: 16px;
+cursor: pointer;
+padding: 10px;
+border-radius: 8px;
+transition: background-color 0.2s ease;
+}
+
+.choice label:hover {
+background-color: #f7fafc;
+}
+
+.choice input[type="radio"] {
+width: auto;
+margin-left: 10px;
+margin-bottom: 0;
+}
+
+.declaration-box {
+margin-top: 20px;
+background: #f8f9fa;
+padding: 20px;
+border-radius: 12px;
+text-align: right;
+display: none;
+border-right: 4px solid #667eea;
+line-height: 1.6;
+}
+
+#mapPage {
+display: none;
+height: 100vh;
+width: 100vw;
+flex-direction: row;
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+}
+
+#map {
+width: 65%;
+height: 100vh;
+}
+
+.sidebar {
+width: 35%;
+background: #fff;
+padding: 30px;
+overflow-y: auto;
+box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar h3 {
+color: #4a5568;
+margin-bottom: 20px;
+font-size: 20px;
+}
+
+.sidebar label {
+display: block;
+margin-bottom: 8px;
+font-weight: 600;
+color: #2d3748;
+}
+
+#passengerPage, #driverPage, #mapPage {
+display: none;
+}
+
+.file-input-wrapper {
+position: relative;
+margin-bottom: 15px;
+}
+
+.file-input-wrapper input[type="file"] {
+opacity: 0;
+position: absolute;
+z-index: -1;
+}
+
+.file-input-label {
+display: block;
+padding: 15px;
+background: #f8f9fa;
+border: 2px dashed #cbd5e0;
+border-radius: 12px;
+text-align: center;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+
+.file-input-label:hover {
+border-color: #667eea;
+background: #edf2f7;
+}
+
+.success-message {
+background: #c6f6d5;
+color: #22543d;
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 15px;
+display: none;
+}
+
+.error-message {
+background: #fed7d7;
+color: #742a2a;
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 15px;
+display: none;
+}
+
+.driver-card {
+background: white;
+border-radius: 12px;
+padding: 15px;
+margin-bottom: 15px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+border: 2px solid transparent;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+
+.driver-card:hover {
+border-color: #667eea;
+transform: translateY(-2px);
+}
+
+.driver-card.selected {
+border-color: #48bb78;
+background: #f0fff4;
+}
+
+.driver-info {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 10px;
+}
+
+.driver-name {
+font-weight: 600;
+color: #2d3748;
+font-size: 16px;
+}
+
+.driver-distance {
+background: #667eea;
+color: white;
+padding: 4px 8px;
+border-radius: 6px;
+font-size: 12px;
+}
+
+.car-info {
+color: #718096;
+font-size: 14px;
+margin-bottom: 10px;
+}
+
+.driver-actions {
+display: flex;
+gap: 10px;
+}
+
+.action-btn {
+flex: 1;
+padding: 8px 12px;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+font-size: 14px;
+font-weight: 600;
+transition: all 0.2s ease;
+}
+
+.call-btn {
+background: #48bb78;
+color: white;
+}
+
+.call-btn:hover {
+background: #38a169;
+}
+
+.chat-btn {
+background: #4299e1;
+color: white;
+}
+
+.chat-btn:hover {
+background: #3182ce;
+}
+
+.select-btn {
+background: #667eea;
+color: white;
+}
+
+.select-btn:hover {
+background: #5a67d8;
+}
+
+.cancel-btn {
+background: #e53e3e;
+color: white;
+}
+
+.cancel-btn:hover {
+background: #c53030;
+}
+
+.notification {
+position: fixed;
+top: 20px;
+right: 20px;
+background: white;
+padding: 20px;
+border-radius: 12px;
+box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+border-right: 4px solid #667eea;
+z-index: 1000;
+max-width: 350px;
+animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+from {
+transform: translateX(100%);
+opacity: 0;
+}
+to {
+transform: translateX(0);
+opacity: 1;
+}
+}
+
+.notification-title {
+font-weight: 600;
+color: #2d3748;
+margin-bottom: 10px;
+}
+
+.notification-content {
+color: #4a5568;
+margin-bottom: 15px;
+line-height: 1.5;
+}
+
+.notification-actions {
+display: flex;
+gap: 10px;
+}
+
+.accept-btn {
+background: #48bb78;
+color: white;
+border: none;
+padding: 8px 16px;
+border-radius: 8px;
+cursor: pointer;
+font-weight: 600;
+}
+
+.reject-btn {
+background: #e53e3e;
+color: white;
+border: none;
+padding: 8px 16px;
+border-radius: 8px;
+cursor: pointer;
+font-weight: 600;
+}
+
+.chat-container {
+position: fixed;
+bottom: 20px;
+right: 20px;
+width: 300px;
+height: 400px;
+background: white;
+border-radius: 12px;
+box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+display: none;
+flex-direction: column;
+z-index: 1000;
+}
+
+.chat-header {
+background: #667eea;
+color: white;
+padding: 15px;
+border-radius: 12px 12px 0 0;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.chat-messages {
+flex: 1;
+padding: 15px;
+overflow-y: auto;
+max-height: 250px;
+}
+
+.chat-input-container {
+padding: 15px;
+border-top: 1px solid #e2e8f0;
+display: flex;
+gap: 10px;
+}
+
+.chat-input {
+flex: 1;
+padding: 8px 12px;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+margin: 0;
+}
+
+.send-btn {
+background: #667eea;
+color: white;
+border: none;
+padding: 8px 12px;
+border-radius: 8px;
+cursor: pointer;
+margin: 0;
+width: auto;
+}
+
+.message {
+margin-bottom: 10px;
+padding: 8px 12px;
+border-radius: 8px;
+max-width: 80%;
+}
+
+.message.sent {
+background: #667eea;
+color: white;
+margin-left: auto;
+text-align: left;
+}
+
+.message.received {
+background: #f7fafc;
+color: #2d3748;
+margin-right: auto;
+}
+
+.trip-status {
+background: #e6fffa;
+border: 1px solid #81e6d9;
+border-radius: 8px;
+padding: 15px;
+margin-bottom: 15px;
+text-align: center;
+}
+
+.trip-status.active {
+background: #f0fff4;
+border-color: #9ae6b4;
+}
+
+.distance-calculator {
+background: #f8f9fa;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 15px;
+margin-bottom: 15px;
+}
+
+.distance-input {
+display: flex;
+gap: 10px;
+margin-bottom: 10px;
+}
+
+.distance-input input {
+flex: 1;
+margin: 0;
+}
+
+.price-display {
+background: #667eea;
+color: white;
+padding: 10px;
+border-radius: 8px;
+text-align: center;
+font-weight: 600;
+font-size: 18px;
+}
+
+.driver-popup {
+background: white;
+padding: 15px;
+border-radius: 8px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+min-width: 200px;
+}
+
+.driver-popup h4 {
+margin: 0 0 10px 0;
+color: #2d3748;
+font-size: 16px;
+}
+
+.driver-popup p {
+margin: 5px 0;
+color: #4a5568;
+font-size: 14px;
+}
+
+.destination-input {
+background: #f8f9fa;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 15px;
+margin-bottom: 15px;
+}
+
+.destination-input h4 {
+margin: 0 0 10px 0;
+color: #2d3748;
+}
+
+.destination-display {
+background: #e6fffa;
+border: 1px solid #81e6d9;
+border-radius: 8px;
+padding: 10px;
+margin-bottom: 15px;
+text-align: center;
+font-weight: 600;
+}
+
+.map-layers {
+background: #f8f9fa;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 15px;
+margin-bottom: 15px;
+}
+
+.map-layers h4 {
+margin: 0 0 10px 0;
+color: #2d3748;
+}
+
+.layer-option {
+display: flex;
+align-items: center;
+margin-bottom: 8px;
+}
+
+.layer-option input[type="radio"] {
+width: auto;
+margin-left: 10px;
+margin-bottom: 0;
+}
+
+/* إضافة أنماط للتسجيل البديل */
+.alternative-login {
+margin-top: 20px;
+padding-top: 20px;
+border-top: 1px solid #e2e8f0;
+}
+
+.alternative-login h3 {
+font-size: 18px;
+margin-bottom: 15px;
+color: #4a5568;
+}
+
+.loading-spinner {
+border: 3px solid #f3f3f3;
+border-top: 3px solid #667eea;
+border-radius: 50%;
+width: 30px;
+height: 30px;
+animation: spin 1s linear infinite;
+margin: 10px auto;
+display: none;
+}
+
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+#mapPage {
+flex-direction: column;
+}
+
+#map {
+width: 100%;
+height: 60vh;
+}
+
+.sidebar {
+width: 100%;
+height: 40vh;
+padding: 20px;
+}
+
+.box {
+margin: 10px;
+padding: 20px;
+}
+
+.chat-container {
+width: 90%;
+right: 5%;
+left: 5%;
+}
+
+.notification {
+right: 10px;
+left: 10px;
+max-width: none;
+}
+}
+</style>
 </head>
 <body>
-    <!-- صفحة تسجيل الدخول -->
-    <div class="box" id="loginPage">
-        <h2>مرحباً بك في GRASIAS</h2>
-        <div class="choice">
-            <label>
-                <input type="radio" name="role" value="sayeq">
-                <span>🚗 سائق</span>
-            </label>
-            <label>
-                <input type="radio" name="role" value="rakib">
-                <span>🧍‍♀️ راكب</span>
-            </label>
-        </div>
-
-        <!-- تسجيل الدخول بـ Google -->
-        <button onclick="signInWithGoogle()" id="googleSignInBtn">🔐 تسجيل الدخول باستخدام Google</button>
-
-        <!-- التسجيل البديل -->
-        <div class="alternative-login">
-            <h3>أو سجل دخولك مباشرة:</h3>
-            <input type="text" id="userName" placeholder="الاسم الكامل" required>
-            <input type="email" id="userEmail" placeholder="البريد الإلكتروني" required>
-            <button onclick="signInAlternative()">🚀 دخول مباشر</button>
-        </div>
-
-        <div class="loading-spinner" id="loadingSpinner"></div>
-        <div class="success-message" id="loginSuccess"></div>
-        <div class="error-message" id="loginError"></div>
-    </div>
-
-    <!-- صفحة الراكب -->
-    <div class="box" id="passengerPage">
-        <h2>معلومات الراكب</h2>
-        <div class="success-message" id="passengerSuccess"></div>
-        <div class="error-message" id="passengerError"></div>
-        
-        <input type="text" id="passengerName" placeholder="الاسم الكامل" required>
-        <input type="tel" id="passengerPhone" placeholder="رقم الهاتف (مثال: 0612345678)" required>
-        
-        <div class="file-input-wrapper">
-            <input type="file" id="passengerIdCard" accept="image/*" />
-            <label for="passengerIdCard" class="file-input-label">
-                📄 اختر صورة بطاقة الهوية
-            </label>
-        </div>
-        
-        <button onclick="submitPassengerInfo()">متابعة ➡️</button>
-    </div>
-
-    <!-- صفحة السائق -->
-    <div class="box" id="driverPage">
-        <h2>معلومات السائق</h2>
-        <div class="success-message" id="driverSuccess"></div>
-        <div class="error-message" id="driverError"></div>
-        
-        <input type="text" id="driverName" placeholder="الاسم الكامل" required>
-        <input type="tel" id="driverPhone" placeholder="رقم الهاتف (مثال: 0612345678)" required>
-        <input type="text" id="carType" placeholder="نوع السيارة (مثال: تويوتا كورولا)" required>
-        <input type="text" id="carColor" placeholder="لون السيارة" required>
-        <input type="text" id="plateNumber" placeholder="رقم لوحة السيارة" required>
-        
-        <div class="file-input-wrapper">
-            <input type="file" id="driverId" accept="image/*" required>
-            <label for="driverId" class="file-input-label">
-                📄 اختر صورة بطاقة الهوية
-            </label>
-        </div>
-        
-        <div class="file-input-wrapper">
-            <input type="file" id="carCheck" accept="image/*" required>
-            <label for="carCheck" class="file-input-label">
-                🔧 اختر صورة التشخيص التقني
-            </label>
-        </div>
-        
-        <button onclick="showDeclaration()">📜 عرض التعهد</button>
-        <div class="declaration-box" id="declarationBox"></div>
-        <button onclick="startDriverMap()">متابعة ➡️</button>
-    </div>
-
-    <!-- صفحة الخريطة -->
-    <div id="mapPage">
-        <div id="map"></div>
-        <div class="sidebar">
-            <div id="tripStatus" class="trip-status" style="display: none;">
-                <div id="tripStatusText"></div>
-                <button id="cancelTripBtn" class="cancel-btn" onclick="cancelTrip()" style="display: none; margin-top: 10px;">❌ إلغاء الرحلة</button>
-            </div>
-            
-            <h3 id="sidebarTitle">🚗 تفاصيل الرحلة</h3>
-            
-            <div class="map-layers">
-                <h4>🗺️ طبقات الخريطة:</h4>
-                <div class="layer-option">
-                    <input type="radio" name="mapLayer" value="osm" id="osmLayer" checked onchange="changeMapLayer()">
-                    <label for="osmLayer">الخريطة العادية</label>
-                </div>
-                <div class="layer-option">
-                    <input type="radio" name="mapLayer" value="satellite" id="satelliteLayer" onchange="changeMapLayer()">
-                    <label for="satelliteLayer">صور الأقمار الصناعية</label>
-                </div>
-                <div class="layer-option">
-                    <input type="radio" name="mapLayer" value="terrain" id="terrainLayer" onchange="changeMapLayer()">
-                    <label for="terrainLayer">خريطة التضاريس</label>
-                </div>
-            </div>
-
-            <div id="passengerContent">
-                <div id="nearbyDrivers">
-                    <h4>السائقون القريبون:</h4>
-                    <div id="driversList"></div>
-                </div>
-            </div>
-
-            <div id="driverContent" style="display: none;">
-                <label>حالة السائق:</label>
-                <select id="driverStatus" onchange="updateDriverStatus()">
-                    <option value="available">متاح</option>
-                    <option value="busy">مشغول</option>
-                    <option value="offline">غير متصل</option>
-                </select>
-                
-                <label>عدد المقاعد المتاحة:</label>
-                <input type="number" id="availableSeats" min="1" max="8" value="4">
-                
-                <div class="destination-input">
-                    <h4>🎯 الوجهة:</h4>
-                    <input type="text" id="driverDestination" placeholder="أدخل وجهتك..." onchange="updateDriverDestination()">
-                    <div id="destinationDisplay" class="destination-display" style="display: none;"></div>
-                </div>
-                
-                <label>ملاحظات السائق:</label>
-                <textarea id="driverNotes" placeholder="معلومات إضافية للركاب..." style="height: 60px;"></textarea>
-                
-                <div class="distance-calculator">
-                    <h4>حاسبة الثمن:</h4>
-                    <div class="distance-input">
-                        <input type="number" id="distanceInput" placeholder="المسافة (كم)" min="1" onchange="calculatePrice()">
-                    </div>
-                    <div id="priceDisplay" class="price-display" style="display: none;">
-                        الثمن: <span id="calculatedPrice">0</span> دينار
-                    </div>
-                </div>
-            </div>
-            
-            <button onclick="activateRide()" id="activateBtn">🚗 تفعيل الرحلة</button>
-            <button onclick="logout()" style="background: #e53e3e; margin-top: 10px;">🚪 تسجيل الخروج</button>
-        </div>
-    </div>
-
-    <!-- نافذة الدردشة -->
-    <div id="chatContainer" class="chat-container">
-        <div class="chat-header">
-            <span id="chatTitle">الدردشة</span>
-            <button onclick="closeChat()" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; width: auto;">✕</button>
-        </div>
-        <div id="chatMessages" class="chat-messages"></div>
-        <div class="chat-input-container">
-            <input type="text" id="chatInput" class="chat-input" placeholder="اكتب رسالتك...">
-            <button onclick="sendMessage()" class="send-btn">إرسال</button>
-        </div>
-    </div>
-
-    <!-- تحميل مكتبات Leaflet -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-
-    <!-- Firebase و JavaScript -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, set, get, child, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAekz29R9IwY1pygd4Mic5AX8XZ7A7Z4Fs",
-            authDomain: "grasias-d7830.firebaseapp.com",
-            databaseURL: "https://grasias-d7830-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "grasias-d7830",
-            storageBucket: "grasias-d7830.appspot.com",
-            messagingSenderId: "134413476604",
-            appId: "1:134413476604:web:ab1acfa69c025218cbad79",
-            measurementId: "G-6QBYM41CJ1"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        provider.setCustomParameters({
-            prompt: 'select_account'
-        });
-
-        // متغيرات عامة
-        window.currentUser = null;
-        window.currentRole = null;
-        window.map = null;
-        window.userMarker = null;
-        window.currentLayer = null;
-
-        // جعل Firebase متاح عالمياً
-        window.db = db;
-        window.auth = auth;
-        window.ref = ref;
-        window.set = set;
-        window.get = get;
-        window.update = update;
-        window.push = push;
-        window.onValue = onValue;
-        window.remove = remove;
-
-        // فحص إذا كان في تطبيق
-        function isInApp() {
-            return window.navigator.userAgent.includes('wv') || 
-                   (window.navigator.userAgent.includes('Version/') && window.navigator.userAgent.includes('Mobile'));
-        }
-
-        // تسجيل الدخول بـ Google
-        window.signInWithGoogle = async () => {
-            const roleInput = document.querySelector('input[name="role"]:checked');
-            if (!roleInput) {
-                showMessage('error', "يرجى اختيار الدور قبل تسجيل الدخول", 'login');
-                return;
-            }
-
-            window.currentRole = roleInput.value;
-            showLoading(true);
-
-            try {
-                let result;
-                if (isInApp()) {
-                    await signInWithRedirect(auth, provider);
-                    return;
-                } else {
-                    result = await signInWithPopup(auth, provider);
-                }
-
-                if (result) {
-                    await handleSuccessfulLogin(result.user);
-                }
-            } catch (error) {
-                console.error("خطأ في تسجيل الدخول:", error);
-                showLoading(false);
-                
-                if (error.code === 'auth/popup-blocked') {
-                    showMessage('error', 'تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة أو استخدام التسجيل المباشر.', 'login');
-                } else if (error.code === 'auth/cancelled-popup-request') {
-                    showMessage('error', 'تم إلغاء تسجيل الدخول.', 'login');
-                } else {
-                    showMessage('error', 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى أو استخدام التسجيل المباشر.', 'login');
-                }
-            }
-        };
-
-        // التسجيل البديل
-        window.signInAlternative = async () => {
-            const roleInput = document.querySelector('input[name="role"]:checked');
-            const userName = document.getElementById('userName').value.trim();
-            const userEmail = document.getElementById('userEmail').value.trim();
-
-            if (!roleInput) {
-                showMessage('error', "يرجى اختيار الدور", 'login');
-                return;
-            }
-
-            if (!userName || !userEmail) {
-                showMessage('error', "يرجى ملء جميع الحقول", 'login');
-                return;
-            }
-
-            if (!isValidEmail(userEmail)) {
-                showMessage('error', "يرجى إدخال بريد إلكتروني صحيح", 'login');
-                return;
-            }
-
-            window.currentRole = roleInput.value;
-            showLoading(true);
-
-            try {
-                const fakeUser = {
-                    uid: generateUID(),
-                    displayName: userName,
-                    email: userEmail,
-                    photoURL: null
-                };
-
-                await handleSuccessfulLogin(fakeUser);
-            } catch (error) {
-                console.error("خطأ في التسجيل المباشر:", error);
-                showLoading(false);
-                showMessage('error', 'فشل في التسجيل. يرجى المحاولة مرة أخرى.', 'login');
-            }
-        };
-
-        // معالجة تسجيل الدخول الناجح
-        async function handleSuccessfulLogin(user) {
-            try {
-                window.currentUser = user;
-                
-                // حفظ بيانات المستخدم في قاعدة البيانات
-                await set(ref(db, `users/${user.uid}`), {
-                    name: user.displayName,
-                    email: user.email,
-                    role: window.currentRole,
-                    photoURL: user.photoURL,
-                    lastLogin: new Date().toISOString()
-                });
-
-                showLoading(false);
-                showMessage('success', `مرحباً ${user.displayName}! تم تسجيل الدخول بنجاح.`, 'login');
-
-                // الانتقال للصفحة المناسبة
-                setTimeout(() => {
-                    if (window.currentRole === 'sayeq') {
-                        showDriverPage();
-                    } else {
-                        showPassengerPage();
-                    }
-                }, 1500);
-
-            } catch (error) {
-                console.error("خطأ في حفظ بيانات المستخدم:", error);
-                showLoading(false);
-                showMessage('error', 'حدث خطأ في حفظ البيانات. يرجى المحاولة مرة أخرى.', 'login');
-            }
-        }
-
-        // فحص نتيجة إعادة التوجيه (للتطبيقات المحمولة)
-        getRedirectResult(auth).then(async (result) => {
-            if (result) {
-                const roleInput = document.querySelector('input[name="role"]:checked');
-                if (roleInput) {
-                    window.currentRole = roleInput.value;
-                    await handleSuccessfulLogin(result.user);
-                }
-            }
-        }).catch((error) => {
-            console.error("خطأ في نتيجة إعادة التوجيه:", error);
-            showMessage('error', 'فشل في تسجيل الدخول. يرجى المحاولة مرة أخرى.', 'login');
-        });
-
-        // دوال مساعدة
-        function generateUID() {
-            return 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        }
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-
-        function showLoading(show) {
-            const spinner = document.getElementById('loadingSpinner');
-            if (spinner) {
-                spinner.style.display = show ? 'block' : 'none';
-            }
-        }
-
-        function showMessage(type, message, context) {
-            const messageElement = document.getElementById(`${context}${type === 'success' ? 'Success' : 'Error'}`);
-            if (messageElement) {
-                messageElement.textContent = message;
-                messageElement.style.display = 'block';
-                
-                setTimeout(() => {
-                    messageElement.style.display = 'none';
-                }, 5000);
-            }
-        }
-
-        // إظهار صفحة السائق
-        function showDriverPage() {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('driverPage').style.display = 'block';
-            
-            // ملء البيانات المحفوظة
-            if (window.currentUser) {
-                document.getElementById('driverName').value = window.currentUser.displayName || '';
-            }
-        }
-
-        // إظهار صفحة الراكب
-        function showPassengerPage() {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('passengerPage').style.display = 'block';
-            
-            // ملء البيانات المحفوظة
-            if (window.currentUser) {
-                document.getElementById('passengerName').value = window.currentUser.displayName || '';
-            }
-        }
-
-        // جعل الدوال متاحة عالمياً
-        window.showDriverPage = showDriverPage;
-        window.showPassengerPage = showPassengerPage;
-        window.showMessage = showMessage;
-        window.showLoading = showLoading;
-    </script>
-
-    <script>
-        // باقي دوال JavaScript
-        
-        // إرسال معلومات الراكب
-        function submitPassengerInfo() {
-            const name = document.getElementById('passengerName').value.trim();
-            const phone = document.getElementById('passengerPhone').value.trim();
-            const idCard = document.getElementById('passengerIdCard').files[0];
-
-            if (!name || !phone) {
-                showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'passenger');
-                return;
-            }
-
-            if (!isValidPhone(phone)) {
-                showMessage('error', 'يرجى إدخال رقم هاتف صحيح', 'passenger');
-                return;
-            }
-
-            // حفظ البيانات وإظهار الخريطة
-            showMessage('success', 'تم حفظ المعلومات بنجاح!', 'passenger');
-            setTimeout(() => {
-                showMapPage();
-            }, 1500);
-        }
-
-        // إرسال معلومات السائق
-        function submitDriverInfo() {
-            const name = document.getElementById('driverName').value.trim();
-            const phone = document.getElementById('driverPhone').value.trim();
-            const carType = document.getElementById('carType').value.trim();
-            const carColor = document.getElementById('carColor').value.trim();
-            const plateNumber = document.getElementById('plateNumber').value.trim();
-            const driverId = document.getElementById('driverId').files[0];
-            const carCheck = document.getElementById('carCheck').files[0];
-
-            if (!name || !phone || !carType || !carColor || !plateNumber) {
-                showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'driver');
-                return;
-            }
-
-            if (!isValidPhone(phone)) {
-                showMessage('error', 'يرجى إدخال رقم هاتف صحيح', 'driver');
-                return;
-            }
-
-            if (!driverId || !carCheck) {
-                showMessage('error', 'يرجى رفع جميع الصور المطلوبة', 'driver');
-                return;
-            }
-
-            showMessage('success', 'تم حفظ المعلومات بنجاح!', 'driver');
-            setTimeout(() => {
-                showMapPage();
-            }, 1500);
-        }
-
-        // عرض التعهد
-        function showDeclaration() {
-            const declarationBox = document.getElementById('declarationBox');
-            declarationBox.innerHTML = `
-                <h4>تعهد السائق</h4>
-                <p>أتعهد بما يلي:</p>
-                <ul style="text-align: right; margin: 15px 0;">
-                    <li>القيادة بحذر واحترام قوانين المرور</li>
-                    <li>المحافظة على سلامة الركاب</li>
-                    <li>عدم استخدام الهاتف أثناء القيادة</li>
-                    <li>المحافظة على نظافة السيارة</li>
-                    <li>التعامل بأدب واحترام مع الركاب</li>
-                    <li>عدم التدخين داخل السيارة</li>
-                </ul>
-                <label style="display: flex; align-items: center; margin-top: 15px;">
-                    <input type="checkbox" id="acceptDeclaration" style="width: auto; margin-left: 10px;">
-                    <span>أوافق على جميع الشروط والأحكام</span>
-                </label>
-            `;
-            declarationBox.style.display = 'block';
-        }
-
-        // بدء خريطة السائق
-        function startDriverMap() {
-            const acceptCheckbox = document.getElementById('acceptDeclaration');
-            if (!acceptCheckbox || !acceptCheckbox.checked) {
-                showMessage('error', 'يرجى الموافقة على التعهد أولاً', 'driver');
-                return;
-            }
-
-            submitDriverInfo();
-        }
-
-        // إظهار صفحة الخريطة
-        function showMapPage() {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('passengerPage').style.display = 'none';
-            document.getElementById('driverPage').style.display = 'none';
-            document.getElementById('mapPage').style.display = 'flex';
-
-            // إعداد المحتوى حسب الدور
-            if (window.currentRole === 'sayeq') {
-                document.getElementById('passengerContent').style.display = 'none';
-                document.getElementById('driverContent').style.display = 'block';
-                document.getElementById('sidebarTitle').textContent = '🚗 لوحة تحكم السائق';
-            } else {
-                document.getElementById('passengerContent').style.display = 'block';
-                document.getElementById('driverContent').style.display = 'none';
-                document.getElementById('sidebarTitle').textContent = '🧍‍♀️ البحث عن سائق';
-            }
-
-            // تهيئة الخريطة
-            initializeMap();
-        }
-
-        // تهيئة الخريطة
-        function initializeMap() {
-            if (window.map) {
-                window.map.remove();
-            }
-
-            // إنشاء الخريطة
-            window.map = L.map('map').setView([33.5731, -7.5898], 13); // الدار البيضاء
-
-            // إضافة الطبقة الأساسية
-            window.currentLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(window.map);
-
-            // الحصول على الموقع الحالي
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        
-                        window.map.setView([lat, lng], 15);
-                        
-                        // إضافة علامة للموقع الحالي
-                        window.userMarker = L.marker([lat, lng])
-                            .addTo(window.map)
-                            .bindPopup('موقعك الحالي')
-                            .openPopup();
-                    },
-                    (error) => {
-                        console.error('خطأ في الحصول على الموقع:', error);
-                        showMessage('error', 'لا يمكن الحصول على موقعك. يرجى تفعيل خدمة الموقع.', 'map');
-                    }
-                );
-            }
-
-            // إضافة السائقين الوهميين للاختبار
-            if (window.currentRole === 'rakib') {
-                addDummyDrivers();
-            }
-        }
-
-        // إضافة سائقين وهميين للاختبار
-        function addDummyDrivers() {
-            const drivers = [
-                { id: 1, name: 'أحمد محمد', car: 'تويوتا كورولا بيضاء', distance: '0.5 كم', lat: 33.5731, lng: -7.5898 },
-                { id: 2, name: 'محمد علي', car: 'هيونداي إلنترا سوداء', distance: '1.2 كم', lat: 33.5751, lng: -7.5918 },
-                { id: 3, name: 'يوسف حسن', car: 'رينو سيمبول زرقاء', distance: '2.1 كم', lat: 33.5711, lng: -7.5878 }
-            ];
-
-            const driversList = document.getElementById('driversList');
-            driversList.innerHTML = '';
-
-            drivers.forEach(driver => {
-                // إضافة علامة على الخريطة
-                const marker = L.marker([driver.lat, driver.lng])
-                    .addTo(window.map)
-                    .bindPopup(`
-                        <div class="driver-popup">
-                            <h4>${driver.name}</h4>
-                            <p>🚗 ${driver.car}</p>
-                            <p>📍 ${driver.distance}</p>
-                        </div>
-                    `);
-
-                // إضافة كارت السائق
-                const driverCard = document.createElement('div');
-                driverCard.className = 'driver-card';
-                driverCard.innerHTML = `
-                    <div class="driver-info">
-                        <span class="driver-name">${driver.name}</span>
-                        <span class="driver-distance">${driver.distance}</span>
-                    </div>
-                    <div class="car-info">${driver.car}</div>
-                    <div class="driver-actions">
-                        <button class="action-btn call-btn" onclick="callDriver(${driver.id})">📞</button>
-                        <button class="action-btn chat-btn" onclick="openChat(${driver.id}, '${driver.name}')">💬</button>
-                        <button class="action-btn select-btn" onclick="selectDriver(${driver.id})">اختيار</button>
-                    </div>
-                `;
-
-                driversList.appendChild(driverCard);
-            });
-        }
-
-        // تغيير طبقة الخريطة
-        function changeMapLayer() {
-            const selectedLayer = document.querySelector('input[name="mapLayer"]:checked').value;
-            
-            if (window.currentLayer) {
-                window.map.removeLayer(window.currentLayer);
-            }
-
-            switch (selectedLayer) {
-                case 'satellite':
-                    window.currentLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        attribution: '© Esri'
-                    });
-                    break;
-                case 'terrain':
-                    window.currentLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenTopoMap'
-                    });
-                    break;
-                default:
-                    window.currentLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    });
-            }
-
-            window.currentLayer.addTo(window.map);
-        }
-
-        // تحديث حالة السائق
-        function updateDriverStatus() {
-            const status = document.getElementById('driverStatus').value;
-            console.log('تم تحديث حالة السائق إلى:', status);
-        }
-
-        // تحديث وجهة السائق
-        function updateDriverDestination() {
-            const destination = document.getElementById('driverDestination').value;
-            const display = document.getElementById('destinationDisplay');
-            
-            if (destination.trim()) {
-                display.textContent = `الوجهة: ${destination}`;
-                display.style.display = 'block';
-            } else {
-                display.style.display = 'none';
-            }
-        }
-
-        // حساب السعر
-        function calculatePrice() {
-            const distance = parseFloat(document.getElementById('distanceInput').value);
-            const priceDisplay = document.getElementById('priceDisplay');
-            const calculatedPrice = document.getElementById('calculatedPrice');
-            
-            if (distance && distance > 0) {
-                const price = distance * 5; // 5 دينار للكيلومتر
-                calculatedPrice.textContent = price.toFixed(2);
-                priceDisplay.style.display = 'block';
-            } else {
-                priceDisplay.style.display = 'none';
-            }
-        }
-
-        // تفعيل الرحلة
-        function activateRide() {
-            const btn = document.getElementById('activateBtn');
-            if (btn.textContent.includes('تفعيل')) {
-                btn.textContent = '⏸️ إيقاف الرحلة';
-                btn.style.background = '#e53e3e';
-                showMessage('success', 'تم تفعيل الرحلة! أنت الآن متاح للركاب.', 'map');
-            } else {
-                btn.textContent = '🚗 تفعيل الرحلة';
-                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                showMessage('success', 'تم إيقاف الرحلة.', 'map');
-            }
-        }
-
-        // الاتصال بالسائق
-        function callDriver(driverId) {
-            alert(`جاري الاتصال بالسائق رقم ${driverId}...`);
-        }
-
-        // فتح الدردشة
-        function openChat(driverId, driverName) {
-            const chatContainer = document.getElementById('chatContainer');
-            const chatTitle = document.getElementById('chatTitle');
-            
-            chatTitle.textContent = `دردشة مع ${driverName}`;
-            chatContainer.style.display = 'flex';
-        }
-
-        // إغلاق الدردشة
-        function closeChat() {
-            document.getElementById('chatContainer').style.display = 'none';
-        }
-
-        // إرسال رسالة
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const messages = document.getElementById('chatMessages');
-            
-            if (input.value.trim()) {
-                const message = document.createElement('div');
-                message.className = 'message sent';
-                message.textContent = input.value;
-                messages.appendChild(message);
-                
-                input.value = '';
-                messages.scrollTop = messages.scrollHeight;
-            }
-        }
-
-        // اختيار السائق
-        function selectDriver(driverId) {
-            const cards = document.querySelectorAll('.driver-card');
-            cards.forEach(card => card.classList.remove('selected'));
-            
-            event.target.closest('.driver-card').classList.add('selected');
-            showMessage('success', 'تم اختيار السائق! سيتم إشعاره بطلبك.', 'map');
-        }
-
-        // إلغاء الرحلة
-        function cancelTrip() {
-            if (confirm('هل أنت متأكد من إلغاء الرحلة؟')) {
-                showMessage('success', 'تم إلغاء الرحلة بنجاح.', 'map');
-                document.getElementById('tripStatus').style.display = 'none';
-            }
-        }
-
-        // تسجيل الخروج
-        function logout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                window.currentUser = null;
-                window.currentRole = null;
-                
-                // إخفاء جميع الصفحات وإظهار صفحة تسجيل الدخول
-                document.getElementById('mapPage').style.display = 'none';
-                document.getElementById('passengerPage').style.display = 'none';
-                document.getElementById('driverPage').style.display = 'none';
-                document.getElementById('loginPage').style.display = 'block';
-                
-                // إعادة تعيين النماذج
-                document.querySelectorAll('input').forEach(input => {
-                    if (input.type !== 'radio' && input.type !== 'checkbox') {
-                        input.value = '';
-                    } else {
-                        input.checked = false;
-                    }
-                });
-                
-                showMessage('success', 'تم تسجيل الخروج بنجاح.', 'login');
-            }
-        }
-
-        // التحقق من صحة رقم الهاتف
-        function isValidPhone(phone) {
-            const phoneRegex = /^(06|07)\d{8}$/;
-            return phoneRegex.test(phone);
-        }
-
-        // إضافة مستمع لمفتاح Enter في حقل الدردشة
-        document.addEventListener('DOMContentLoaded', function() {
-            const chatInput = document.getElementById('chatInput');
-            if (chatInput) {
-                chatInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        sendMessage();
-                    }
-                });
-            }
-        });
-
-        // جعل الدوال متاحة عالمياً
-        window.submitPassengerInfo = submitPassengerInfo;
-        window.submitDriverInfo = submitDriverInfo;
-        window.showDeclaration = showDeclaration;
-        window.startDriverMap = startDriverMap;
-        window.showMapPage = showMapPage;
-        window.initializeMap = initializeMap;
-        window.changeMapLayer = changeMapLayer;
-        window.updateDriverStatus = updateDriverStatus;
-        window.updateDriverDestination = updateDriverDestination;
-        window.calculatePrice = calculatePrice;
-        window.activateRide = activateRide;
-        window.callDriver = callDriver;
-        window.openChat = openChat;
-        window.closeChat = closeChat;
-        window.sendMessage = sendMessage;
-        window.selectDriver = selectDriver;
-        window.cancelTrip = cancelTrip;
-        window.logout = logout;
-    </script>
+<!-- صفحة تسجيل الدخول -->
+<div class="box" id="loginPage">
+<h2>مرحباً بك في GRASIAS</h2>
+<div class="choice">
+<label>
+<input type="radio" name="role" value="sayeq">
+<span>🚗 سائق</span>
+</label>
+<label>
+<input type="radio" name="role" value="rakib">
+<span>🧍‍♀️ راكب</span>
+</label>
+</div>
+
+<!-- تسجيل الدخول بـ Google (للمتصفح فقط) -->
+<button onclick="signInWithGoogle()" id="googleSignInBtn">🔐 تسجيل الدخول باستخدام Google</button>
+
+<!-- التسجيل البديل للتطبيقات -->
+<div class="alternative-login">
+<h3>أو سجل دخولك مباشرة:</h3>
+<input type="text" id="userName" placeholder="الاسم الكامل" required>
+<input type="email" id="userEmail" placeholder="البريد الإلكتروني" required>
+<button onclick="signInAlternative()">🚀 دخول مباشر</button>
+</div>
+
+<div class="loading-spinner" id="loadingSpinner"></div>
+<div class="success-message" id="loginSuccess"></div>
+<div class="error-message" id="loginError"></div>
+</div>
+
+<!-- باقي الصفحات تبقى كما هي -->
+<div class="box" id="passengerPage">
+<h2>معلومات الراكب</h2>
+<div class="success-message" id="passengerSuccess"></div>
+<div class="error-message" id="passengerError"></div>
+<input type="text" id="passengerName" placeholder="الاسم الكامل" required>
+<input type="tel" id="passengerPhone" placeholder="رقم الهاتف (مثال: 0612345678)" required>
+<div class="file-input-wrapper">
+<input type="file" id="passengerIdCard" accept="image/*" />
+<label for="passengerIdCard" class="file-input-label">
+📄 اختر صورة بطاقة الهوية
+</label>
+</div>
+<button onclick="submitPassengerInfo()">متابعة ➡️</button>
+</div>
+
+<div class="box" id="driverPage">
+<h2>معلومات السائق</h2>
+<div class="success-message" id="driverSuccess"></div>
+<div class="error-message" id="driverError"></div>
+<input type="text" id="driverName" placeholder="الاسم الكامل" required>
+<input type="tel" id="driverPhone" placeholder="رقم الهاتف (مثال: 0612345678)" required>
+<input type="text" id="carType" placeholder="نوع السيارة (مثال: تويوتا كورولا)" required>
+<input type="text" id="carColor" placeholder="لون السيارة" required>
+<input type="text" id="plateNumber" placeholder="رقم لوحة السيارة" required>
+<div class="file-input-wrapper">
+<input type="file" id="driverId" accept="image/*" required>
+<label for="driverId" class="file-input-label">
+📄 اختر صورة بطاقة الهوية
+</label>
+</div>
+<div class="file-input-wrapper">
+<input type="file" id="carCheck" accept="image/*" required>
+<label for="carCheck" class="file-input-label">
+🔧 اختر صورة التشخيص التقني
+</label>
+</div>
+<button onclick="showDeclaration()">📜 عرض التعهد</button>
+<div class="declaration-box" id="declarationBox"></div>
+<button onclick="startDriverMap()">متابعة ➡️</button>
+</div>
+
+<!-- صفحة الخريطة تبقى كما هي -->
+<div id="mapPage">
+<div id="map"></div>
+<div class="sidebar">
+<div id="tripStatus" class="trip-status" style="display: none;">
+<div id="tripStatusText"></div>
+<button id="cancelTripBtn" class="cancel-btn" onclick="cancelTrip()" style="display: none; margin-top: 10px;">❌ إلغاء الرحلة</button>
+</div>
+<h3 id="sidebarTitle">🚗 تفاصيل الرحلة</h3>
+
+<div class="map-layers">
+<h4>🗺️ طبقات الخريطة:</h4>
+<div class="layer-option">
+<input type="radio" name="mapLayer" value="osm" id="osmLayer" checked onchange="changeMapLayer()">
+<label for="osmLayer">الخريطة العادية</label>
+</div>
+<div class="layer-option">
+<input type="radio" name="mapLayer" value="satellite" id="satelliteLayer" onchange="changeMapLayer()">
+<label for="satelliteLayer">صور الأقمار الصناعية</label>
+</div>
+<div class="layer-option">
+<input type="radio" name="mapLayer" value="terrain" id="terrainLayer" onchange="changeMapLayer()">
+<label for="terrainLayer">خريطة التضاريس</label>
+</div>
+</div>
+
+<div id="passengerContent">
+<div id="nearbyDrivers">
+<h4>السائقون القريبون:</h4>
+<div id="driversList"></div>
+</div>
+</div>
+
+<div id="driverContent" style="display: none;">
+<label>حالة السائق:</label>
+<select id="driverStatus" onchange="updateDriverStatus()">
+<option value="available">متاح</option>
+<option value="busy">مشغول</option>
+<option value="offline">غير متصل</option>
+</select>
+
+<label>عدد المقاعد المتاحة:</label>
+<input type="number" id="availableSeats" min="1" max="8" value="4">
+
+<div class="destination-input">
+<h4>🎯 الوجهة:</h4>
+<input type="text" id="driverDestination" placeholder="أدخل وجهتك..." onchange="updateDriverDestination()">
+<div id="destinationDisplay" class="destination-display" style="display: none;"></div>
+</div>
+
+<label>ملاحظات السائق:</label>
+<textarea id="driverNotes" placeholder="معلومات إضافية للركاب..." style="height: 60px;"></textarea>
+
+<div class="distance-calculator">
+<h4>حاسبة الثمن:</h4>
+<div class="distance-input">
+<input type="number" id="distanceInput" placeholder="المسافة (كم)" min="1" onchange="calculatePrice()">
+</div>
+<div id="priceDisplay" class="price-display" style="display: none;">
+الثمن: <span id="calculatedPrice">0</span> دينار
+</div>
+</div>
+</div>
+
+<button onclick="activateRide()" id="activateBtn">🚗 تفعيل الرحلة</button>
+<button onclick="logout()" style="background: #e53e3e; margin-top: 10px;">🚪 تسجيل الخروج</button>
+</div>
+</div>
+
+<!-- نافذة الدردشة -->
+<div id="chatContainer" class="chat-container">
+<div class="chat-header">
+<span id="chatTitle">الدردشة</span>
+<button onclick="closeChat()" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; width: auto;">✕</button>
+</div>
+<div id="chatMessages" class="chat-messages"></div>
+<div class="chat-input-container">
+<input type="text" id="chatInput" class="chat-input" placeholder="اكتب رسالتك...">
+<button onclick="sendMessage()" class="send-btn">إرسال</button>
+</div>
+</div>
+
+<!-- تحميل مكتبات Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, get, child, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyAekz29R9IwY1pygd4Mic5AX8XZ7A7Z4Fs",
+authDomain: "grasias-d7830.firebaseapp.com",
+databaseURL: "https://grasias-d7830-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId: "grasias-d7830",
+storageBucket: "grasias-d7830.appspot.com",
+messagingSenderId: "134413476604",
+appId: "1:134413476604:web:ab1acfa69c025218cbad79",
+measurementId: "G-6QBYM41CJ1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// إعداد Google Auth للتطبيقات المحمولة
+provider.setCustomParameters({
+prompt: 'select_account'
+});
+
+// جعل المتغيرات والدوال متاحة عالمياً
+window.currentUser = null;
+window.currentRole = null;
+window.db = db;
+window.auth = auth;
+window.ref = ref;
+window.set = set;
+window.get = get;
+window.update = update;
+window.push = push;
+window.onValue = onValue;
+window.remove = remove;
+
+// فحص إذا كان المستخدم في تطبيق أم متصفح
+function isInApp() {
+return window.navigator.userAgent.includes('wv') || 
+       window.navigator.userAgent.includes('Version/') && window.navigator.userAgent.includes('Mobile');
+}
+
+// تسجيل الدخول بـ Google (محسن للتطبيقات)
+window.signInWithGoogle = async () => {
+const roleInput = document.querySelector('input[name="role"]:checked');
+if (!roleInput) {
+showMessage('error', "يرجى اختيار الدور قبل تسجيل الدخول", 'login');
+return;
+}
+
+window.currentRole = roleInput.value;
+showLoading(true);
+
+try {
+let result;
+
+// إذا كان في تطبيق، استخدم redirect بدلاً من popup
+if (isInApp()) {
+// للتطبيقات المحمولة - استخدام redirect
+await signInWithRedirect(auth, provider);
+// النتيجة ستأتي في getRedirectResult عند إعادة تحميل الصفحة
+return;
+} else {
+// للمتصفحات العادية - استخدام popup
+result = await signInWithPopup(auth, provider);
+}
+
+if (result) {
+await handleSuccessfulLogin(result.user);
+}
+} catch (error) {
+console.error("خطأ في تسجيل الدخول:", error);
+showLoading(false);
+
+if (error.code === 'auth/popup-blocked') {
+showMessage('error', 'تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة أو استخدام التسجيل المباشر.', 'login');
+} else if (error.code === 'auth/cancelled-popup-request') {
+showMessage('error', 'تم إلغاء تسجيل الدخول.', 'login');
+} else {
+showMessage('error', 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى أو استخدام التسجيل المباشر.', 'login');
+}
+}
+};
+
+// التسجيل البديل (بدون Google)
+window.signInAlternative = async () => {
+const roleInput = document.querySelector('input[name="role"]:checked');
+const userName = document.getElementById('userName').value.trim();
+const userEmail = document.getElementById('userEmail').value.trim();
+
+if (!roleInput) {
+showMessage('error', "يرجى اختيار الدور", 'login');
+return;
+}
+
+if (!userName || !userEmail) {
+showMessage('error', "يرجى ملء جميع الحقول", 'login');
+return;
+}
+
+if (!isValidEmail(userEmail)) {
+showMessage('error', "يرجى إدخال بريد إلكتروني صحيح", 'login');
+return;
+}
+
+window.currentRole = roleInput.value;
+showLoading(true);
+
+try {
+// إنشاء مستخدم وهمي للتسجيل المباشر
+const fakeUser = {
+uid: generateUID(),
+displayName: userName,
+email: userEmail,
+photoURL: null
+};
+
+await handleSuccessfulLogin(fakeUser);
+} catch (error) {
+console.error("خطأ في التسجيل المباشر:", error);
+showMessage('error', 'فشل في التسجيل. يرجى المحاولة مرة أخرى.', 'login');
+showLoading(false);
+}
+};
+
+// معالجة تسجيل الدخول الناجح
+async function handleSuccessfulLogin(user) {
+window.currentUser = user;
+
+try {
+const userRef = ref(db, `users/${user.uid}`);
+const snapshot = await get(userRef);
+
+if (snapshot.exists()) {
+const userData = snapshot.val();
+window.currentRole = userData.role;
+showMessage('success', 'تم تسجيل الدخول بنجاح!', 'login');
+setTimeout(() => {
+showPage("mapPage");
+loadMap(user.displayName);
+startLocationTracking();
+}, 1500);
+} else {
+await set(userRef, {
+name: user.displayName,
+email: user.email,
+role: window.currentRole,
+createdAt: new Date().toISOString()
+});
+
+showMessage('success', 'تم إنشاء الحساب بنجاح!', 'login');
+setTimeout(() => {
+if (window.currentRole === "rakib") {
+showPage("passengerPage");
+} else {
+showPage("driverPage");
+}
+}, 1500);
+}
+} catch (error) {
+console.error("خطأ في حفظ بيانات المستخدم:", error);
+showMessage('error', 'حدث خطأ في حفظ البيانات', 'login');
+} finally {
+showLoading(false);
+}
+}
+// حفظ الدور المختار قبل الـ redirect
+const originalSignInWithGoogle = window.signInWithGoogle;
+window.signInWithGoogle = async () => {
+const roleInput = document.querySelector('input[name="role"]:checked');
+if (!roleInput) {
+showMessage('error', "يرجى اختيار الدور قبل تسجيل الدخول", 'login');
+return;
+}
+
+// حفظ الدور في localStorage قبل الـ redirect
+localStorage.setItem('selectedRole', roleInput.value);
+await originalSignInWithGoogle();
+};
+
+// دوال مساعدة
+function generateUID() {
+return 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+}
+
+function isValidEmail(email) {
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+return emailRegex.test(email);
+}
+
+function showLoading(show) {
+const spinner = document.getElementById('loadingSpinner');
+const googleBtn = document.getElementById('googleSignInBtn');
+const altBtn = document.querySelector('.alternative-login button');
+
+if (show) {
+spinner.style.display = 'block';
+googleBtn.disabled = true;
+altBtn.disabled = true;
+googleBtn.textContent = 'جاري تسجيل الدخول...';
+} else {
+spinner.style.display = 'none';
+googleBtn.disabled = false;
+altBtn.disabled = false;
+googleBtn.textContent = '🔐 تسجيل الدخول باستخدام Google';
+}
+}
+
+// إخفاء/إظهار تسجيل الدخول بـ Google حسب البيئة
+document.addEventListener('DOMContentLoaded', () => {
+const googleBtn = document.getElementById('googleSignInBtn');
+const altSection = document.querySelector('.alternative-login');
+
+if (isInApp()) {
+// في التطبيق - إعطاء أولوية للتسجيل المباشر
+altSection.style.order = '-1';
+googleBtn.style.opacity = '0.7';
+googleBtn.innerHTML = '🔐 تسجيل الدخول باستخدام Google<br><small>(قد لا يعمل في التطبيق)</small>';
+}
+});
+
+</script>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script>
+// باقي الكود JavaScript يبقى كما هو...
+let currentMap = null;
+let currentMarker = null;
+let driversMarkers = [];
+let passengersMarkers = [];
+let currentLocation = null;
+let selectedDriver = null;
+let currentTrip = null;
+let routeControl = null;
+let currentChatPartner = null;
+let currentTripRequestId = null;
+let currentMapLayer = null;
+
+// طبقات الخريطة المختلفة
+const mapLayers = {
+osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: '© OpenStreetMap contributors'
+}),
+satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+attribution: '© Esri'
+}),
+terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+attribution: '© OpenTopoMap contributors'
+})
+};
+
+// أيقونات مخصصة للخريطة
+const driverIcon = L.divIcon({
+html: '🚗',
+iconSize: [30, 30],
+className: 'custom-div-icon'
+});
+
+const passengerIcon = L.divIcon({
+html: '🧍‍♀️',
+iconSize: [30, 30],
+className: 'custom-div-icon'
+});
+
+function showPage(id) {
+["loginPage", "passengerPage", "driverPage", "mapPage"].forEach(p => {
+document.getElementById(p).style.display = "none";
+});
+document.getElementById(id).style.display = id === "mapPage" ? "flex" : "block";
+}
+
+function showMessage(type, message, pagePrefix = '') {
+const successEl = document.getElementById(pagePrefix + 'Success');
+const errorEl = document.getElementById(pagePrefix + 'Error');
+
+if (type === 'success') {
+if (successEl) {
+successEl.textContent = message;
+successEl.style.display = 'block';
+}
+if (errorEl) errorEl.style.display = 'none';
+} else {
+if (errorEl) {
+errorEl.textContent = message;
+errorEl.style.display = 'block';
+}
+if (successEl) successEl.style.display = 'none';
+}
+
+setTimeout(() => {
+if (successEl) successEl.style.display = 'none';
+if (errorEl) errorEl.style.display = 'none';
+}, 5000);
+}
+
+// تحسين معالجة الأخطاء
+function handleError(error, userMessage) {
+console.error('خطأ:', error);
+showMessage('error', userMessage || 'حدث خطأ غير متوقع');
+}
+
+// تغيير طبقة الخريطة
+function changeMapLayer() {
+const selectedLayer = document.querySelector('input[name="mapLayer"]:checked').value;
+
+if (currentMap && currentMapLayer) {
+currentMap.removeLayer(currentMapLayer);
+}
+currentMapLayer = mapLayers[selectedLayer];
+currentMapLayer.addTo(currentMap);
+}
+
+// تحديث وجهة السائق
+function updateDriverDestination() {
+const destination = document.getElementById('driverDestination').value;
+const destinationDisplay = document.getElementById('destinationDisplay');
+const driverData = JSON.parse(localStorage.getItem('driverData') || '{}');
+driverData.destination = destination;
+localStorage.setItem('driverData', JSON.stringify(driverData));
+
+if (destination.trim()) {
+destinationDisplay.textContent = `🎯 الوجهة: ${destination}`;
+destinationDisplay.style.display = 'block';
+} else {
+destinationDisplay.style.display = 'none';
+}
+
+// تحديث الوجهة في Firebase
+if (window.currentUser) {
+window.update(window.ref(window.db, `locations/${window.currentUser.uid}`), {
+destination: destination
+}).catch(error => handleError(error, 'فشل في تحديث الوجهة'));
+}
+}
+
+// حساب ثمن المسافة
+function calculatePrice() {
+const distance = parseFloat(document.getElementById('distanceInput').value);
+if (!distance || distance <= 0) {
+document.getElementById('priceDisplay').style.display = 'none';
+return;
+}
+
+let totalPrice = 0;
+
+if (distance <= 20) {
+totalPrice = distance * 10;
+} else if (distance <= 50) {
+totalPrice = (20 * 10) + ((distance - 20) * 5);
+} else {
+totalPrice = (20 * 10) + (30 * 5) + ((distance - 50) * 2);
+}
+
+document.getElementById('calculatedPrice').textContent = totalPrice;
+document.getElementById('priceDisplay').style.display = 'block';
+}
+
+function loadMap(userName) {
+if (currentMap) {
+currentMap.remove();
+}
+
+currentMap = L.map('map').setView([28.0339, 1.6596], 6);
+
+// إضافة الطبقة الافتراضية
+currentMapLayer = mapLayers.osm;
+currentMapLayer.addTo(currentMap);
+
+// تخصيص المحتوى حسب نوع المستخدم
+if (window.currentRole === 'rakib') {
+document.getElementById('passengerContent').style.display = 'block';
+document.getElementById('driverContent').style.display = 'none';
+document.getElementById('sidebarTitle').textContent = '🧍‍♀️ البحث عن سائق';
+document.getElementById('activateBtn').textContent = '🔍 البحث عن سائق';
+} else {
+document.getElementById('passengerContent').style.display = 'none';
+document.getElementById('driverContent').style.display = 'block';
+document.getElementById('sidebarTitle').textContent = '🚗 لوحة السائق';
+document.getElementById('activateBtn').textContent = '🚗 تفعيل الخدمة';
+}
+
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(position => {
+const lat = position.coords.latitude;
+const lng = position.coords.longitude;
+currentLocation = { lat, lng };
+
+currentMap.setView([lat, lng], 14);
+
+if (currentMarker) {
+currentMap.removeLayer(currentMarker);
+}
+
+const icon = window.currentRole === 'rakib' ? passengerIcon : driverIcon;
+currentMarker = L.marker([lat, lng], { icon }).addTo(currentMap)
+.bindPopup(`📍 ${userName}`)
+.openPopup();
+
+// بدء تتبع الموقع
+startLocationTracking();
+}, (error) => {
+handleError(error, "تعذر تحديد موقعك. يرجى التأكد من تفعيل خدمة الموقع.");
+});
+} else {
+showMessage('error', "المتصفح لا يدعم تحديد الموقع.");
+}
+}
+
+// تحسين تتبع الموقع
+let locationUpdateInterval;
+
+function startLocationTracking() {
+if (!window.currentUser) return;
+
+// تنظيف الفاصل الزمني السابق
+if (locationUpdateInterval) {
+clearInterval(locationUpdateInterval);
+}
+
+// تحديث الموقع كل 15 ثانية
+locationUpdateInterval = setInterval(() => {
+updateLocation();
+}, 15000);
+
+// تحديث فوري
+updateLocation();
+
+// مراقبة مواقع المستخدمين الآخرين
+if (window.currentRole === 'rakib') {
+watchDrivers();
+} else {
+watchPassengers();
+}
+
+// مراقبة طلبات الرحلات
+watchTripRequests();
+}
+
+function updateLocation() {
+if (navigator.geolocation && currentLocation) {
+navigator.geolocation.getCurrentPosition(position => {
+const newLocation = {
+lat: position.coords.latitude,
+lng: position.coords.longitude,
+role: window.currentRole,
+name: window.currentUser.displayName,
+timestamp: Date.now(),
+status: window.currentRole === 'sayeq' ? (document.getElementById('driverStatus')?.value || 'available') : 'active'
+};
+
+// إضافة معلومات السائق إذا كان سائقاً
+if (window.currentRole === 'sayeq') {
+const driverData = JSON.parse(localStorage.getItem('driverData') || '{}');
+newLocation.phone = driverData.phone || '';
+newLocation.carType = driverData.carType || '';
+newLocation.carColor = driverData.carColor || '';
+newLocation.plateNumber = driverData.plateNumber || '';
+newLocation.availableSeats = document.getElementById('availableSeats')?.value || 4;
+newLocation.notes = document.getElementById('driverNotes')?.value || '';
+newLocation.destination = driverData.destination || '';
+}
+
+// تحديث الموقع في Firebase
+window.set(window.ref(window.db, `locations/${window.currentUser.uid}`), newLocation)
+.catch(error => handleError(error, 'فشل في تحديث الموقع'));
+
+// تحديث الموقع المحلي
+currentLocation = { lat: newLocation.lat, lng: newLocation.lng };
+
+// تحديث العلامة على الخريطة
+if (currentMarker) {
+currentMarker.setLatLng([newLocation.lat, newLocation.lng]);
+}
+}, error => {
+handleError(error, 'فشل في تحديث الموقع');
+});
+}
+}
+
+// مراقبة السائقين للركاب
+function watchDrivers() {
+const driversRef = window.ref(window.db, 'locations');
+window.onValue(driversRef, (snapshot) => {
+const locations = snapshot.val();
+updateDriversOnMap(locations);
+updateDriversList(locations);
+}, error => {
+handleError(error, 'فشل في تحميل مواقع السائقين');
+});
+}
+
+// مراقبة الركاب للسائقين
+function watchPassengers() {
+const passengersRef = window.ref(window.db, 'locations');
+window.onValue(passengersRef, (snapshot) => {
+const locations = snapshot.val();
+updatePassengersOnMap(locations);
+}, error => {
+handleError(error, 'فشل في تحميل مواقع الركاب');
+});
+}
+
+// تحديث السائقين على الخريطة
+function updateDriversOnMap(locations) {
+// إزالة العلامات القديمة
+driversMarkers.forEach(marker => currentMap.removeLayer(marker));
+driversMarkers = [];
+
+if (!locations) return;
+
+Object.keys(locations).forEach(userId => {
+const location = locations[userId];
+if (location.role === 'sayeq' && location.status === 'available' && userId !== window.currentUser?.uid) {
+const marker = L.marker([location.lat, location.lng], { icon: driverIcon })
+.addTo(currentMap);
+
+// إنشاء popup مع معلومات السائق الكاملة
+const popupContent = `
+<div class="driver-popup">
+<h4>🚗 ${location.name}</h4>
+<p><strong>📞 الهاتف:</strong> ${location.phone || 'غير متوفر'}</p>
+<p><strong>🚙 نوع السيارة:</strong> ${location.carType || 'غير محدد'}</p>
+<p><strong>🎨 لون السيارة:</strong> ${location.carColor || 'غير محدد'}</p>
+<p><strong>🔢 رقم اللوحة:</strong> ${location.plateNumber || 'غير متوفر'}</p>
+<p><strong>💺 المقاعد المتاحة:</strong> ${location.availableSeats || 4}</p>
+${location.destination ? `<p><strong>🎯 الوجهة:</strong> ${location.destination}</p>` : ''}
+${location.notes ? `<p><strong>📝 ملاحظات:</strong> ${location.notes}</p>` : ''}
+</div>
+`;
+
+marker.bindPopup(popupContent);
+marker.userId = userId;
+driversMarkers.push(marker);
+}
+});
+}
+
+// تحديث الركاب على الخريطة
+function updatePassengersOnMap(locations) {
+// إزالة العلامات القديمة
+passengersMarkers.forEach(marker => currentMap.removeLayer(marker));
+passengersMarkers = [];
+
+if (!locations) return;
+
+Object.keys(locations).forEach(userId => {
+const location = locations[userId];
+if (location.role === 'rakib' && userId !== window.currentUser?.uid) {
+const marker = L.marker([location.lat, location.lng], { icon: passengerIcon })
+.addTo(currentMap);
+
+const popupContent = `
+<div class="driver-popup">
+<h4>🧍‍♀️ ${location.name}</h4>
+<p><strong>📍 الموقع:</strong> راكب يبحث عن رحلة</p>
+</div>
+`;
+
+marker.bindPopup(popupContent);
+marker.userId = userId;
+passengersMarkers.push(marker);
+}
+});
+}
+
+// تحديث قائمة السائقين
+function updateDriversList(locations) {
+const driversList = document.getElementById('driversList');
+if (!driversList) return;
+
+driversList.innerHTML = '';
+
+if (!locations || !currentLocation) return;
+
+const availableDrivers = [];
+
+Object.keys(locations).forEach(userId => {
+const location = locations[userId];
+if (location.role === 'sayeq' && location.status === 'available' && userId !== window.currentUser?.uid) {
+const distance = calculateDistance(currentLocation.lat, currentLocation.lng, location.lat, location.lng);
+availableDrivers.push({ ...location, userId, distance });
+}
+});
+
+// ترتيب السائقين حسب المسافة
+availableDrivers.sort((a, b) => a.distance - b.distance);
+
+availableDrivers.forEach(driver => {
+const driverCard = document.createElement('div');
+driverCard.className = 'driver-card';
+driverCard.innerHTML = `
+<div class="driver-info">
+<span class="driver-name">🚗 ${driver.name}</span>
+<span class="driver-distance">${driver.distance.toFixed(1)} كم</span>
+</div>
+<div class="car-info">
+🚙 ${driver.carType || 'غير محدد'} - 🎨 ${driver.carColor || 'غير محدد'}
+<br>💺 ${driver.availableSeats || 4} مقاعد متاحة
+${driver.destination ? `<br>🎯 الوجهة: ${driver.destination}` : ''}
+</div>
+<div class="driver-actions">
+<button class="action-btn call-btn" onclick="callDriver('${driver.phone}')">📞 اتصال</button>
+<button class="action-btn chat-btn" onclick="startChat('${driver.userId}', '${driver.name}')">💬 دردشة</button>
+<button class="action-btn select-btn" onclick="selectDriver('${driver.userId}')">✅ اختيار</button>
+</div>
+`;
+driversList.appendChild(driverCard);
+});
+
+if (availableDrivers.length === 0) {
+driversList.innerHTML = '<p style="text-align: center; color: #718096;">لا يوجد سائقون متاحون في المنطقة</p>';
+}
+}
+
+// حساب المسافة بين نقطتين
+function calculateDistance(lat1, lng1, lat2, lng2) {
+const R = 6371; // نصف قطر الأرض بالكيلومتر
+const dLat = (lat2 - lat1) * Math.PI / 180;
+const dLng = (lng2 - lng1) * Math.PI / 180;
+const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+Math.sin(dLng/2) * Math.sin(dLng/2);
+const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+return R * c;
+}
+
+// اتصال بالسائق
+function callDriver(phone) {
+if (phone && phone !== 'غير متوفر') {
+window.open(`tel:${phone}`, '_self');
+} else {
+showMessage('error', 'رقم الهاتف غير متوفر');
+}
+}
+
+// بدء الدردشة
+function startChat(userId, userName) {
+currentChatPartner = { userId, userName };
+document.getElementById('chatTitle').textContent = `دردشة مع ${userName}`;
+document.getElementById('chatContainer').style.display = 'flex';
+loadChatMessages(userId);
+}
+
+// إغلاق الدردشة
+function closeChat() {
+document.getElementById('chatContainer').style.display = 'none';
+currentChatPartner = null;
+}
+
+// تحميل رسائل الدردشة
+function loadChatMessages(partnerId) {
+const chatId = [window.currentUser.uid, partnerId].sort().join('_');
+const messagesRef = window.ref(window.db, `chats/${chatId}/messages`);
+
+window.onValue(messagesRef, (snapshot) => {
+const messages = snapshot.val();
+const chatMessages = document.getElementById('chatMessages');
+chatMessages.innerHTML = '';
+
+if (messages) {
+Object.keys(messages).forEach(messageId => {
+const message = messages[messageId];
+const messageDiv = document.createElement('div');
+messageDiv.className = `message ${message.senderId === window.currentUser.uid ? 'sent' : 'received'}`;
+messageDiv.textContent = message.text;
+chatMessages.appendChild(messageDiv);
+});
+chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+}, error => {
+handleError(error, 'فشل في تحميل الرسائل');
+});
+}
+
+// إرسال رسالة
+function sendMessage() {
+const chatInput = document.getElementById('chatInput');
+const messageText = chatInput.value.trim();
+
+if (!messageText || !currentChatPartner) return;
+
+const chatId = [window.currentUser.uid, currentChatPartner.userId].sort().join('_');
+const messagesRef = window.ref(window.db, `chats/${chatId}/messages`);
+
+window.push(messagesRef, {
+text: messageText,
+senderId: window.currentUser.uid,
+senderName: window.currentUser.displayName,
+timestamp: Date.now()
+}).then(() => {
+chatInput.value = '';
+}).catch(error => {
+handleError(error, 'فشل في إرسال الرسالة');
+});
+}
+
+// اختيار سائق
+function selectDriver(driverId) {
+selectedDriver = driverId;
+
+// إرسال طلب رحلة للسائق
+const tripRequest = {
+passengerId: window.currentUser.uid,
+passengerName: window.currentUser.displayName,
+driverId: driverId,
+passengerLocation: currentLocation,
+status: 'pending',
+timestamp: Date.now()
+};
+
+window.push(window.ref(window.db, 'tripRequests'), tripRequest)
+.then((ref) => {
+currentTripRequestId = ref.key;
+showNotification('تم إرسال طلب الرحلة', 'في انتظار موافقة السائق...', 'info');
+}).catch(error => {
+handleError(error, 'فشل في إرسال طلب الرحلة');
+});
+}
+
+// إلغاء الرحلة
+function cancelTrip() {
+if (currentTripRequestId) {
+// إلغاء طلب الرحلة
+window.update(window.ref(window.db, `tripRequests/${currentTripRequestId}`), {
+status: 'cancelled',
+cancelledAt: Date.now(),
+cancelledBy: window.currentUser.uid
+}).then(() => {
+// إزالة المسار من الخريطة
+if (routeControl) {
+currentMap.removeControl(routeControl);
+routeControl = null;
+}
+
+// إخفاء حالة الرحلة
+document.getElementById('tripStatus').style.display = 'none';
+document.getElementById('cancelTripBtn').style.display = 'none';
+
+currentTripRequestId = null;
+selectedDriver = null;
+
+showNotification('تم إلغاء الرحلة', 'يمكنك البحث عن سائق آخر', 'info');
+}).catch(error => {
+handleError(error, 'فشل في إلغاء الرحلة');
+});
+}
+}
+
+// مراقبة طلبات الرحلات
+function watchTripRequests() {
+const requestsRef = window.ref(window.db, 'tripRequests');
+window.onValue(requestsRef, (snapshot) => {
+const requests = snapshot.val();
+if (!requests) return;
+
+Object.keys(requests).forEach(requestId => {
+const request = requests[requestId];
+
+// للسائق: عرض طلبات الرحلات الواردة
+if (window.currentRole === 'sayeq' && request.driverId === window.currentUser.uid && request.status === 'pending') {
+showTripRequestNotification(request, requestId);
+}
+
+// للراكب: عرض حالة الطلب
+if (window.currentRole === 'rakib' && request.passengerId === window.currentUser.uid) {
+updateTripStatus(request, requestId);
+}
+});
+}, error => {
+handleError(error, 'فشل في مراقبة طلبات الرحلات');
+});
+}
+
+// عرض إشعار طلب الرحلة للسائق
+function showTripRequestNotification(request, requestId) {
+// تجنب عرض إشعارات متكررة
+if (document.querySelector(`[data-request-id="${requestId}"]`)) return;
+
+const notification = document.createElement('div');
+notification.className = 'notification';
+notification.setAttribute('data-request-id', requestId);
+notification.innerHTML = `
+<div class="notification-title">🚗 طلب رحلة جديد</div>
+<div class="notification-content">
+الراكب: ${request.passengerName}<br>
+المسافة: ${calculateDistance(currentLocation.lat, currentLocation.lng, request.passengerLocation.lat, request.passengerLocation.lng).toFixed(1)} كم
+</div>
+<div class="notification-actions">
+<button class="accept-btn" onclick="acceptTrip('${requestId}')">قبول</button>
+<button class="reject-btn" onclick="rejectTrip('${requestId}')">رفض</button>
+</div>
+`;
+document.body.appendChild(notification);
+
+// إزالة الإشعار بعد 30 ثانية
+setTimeout(() => {
+if (notification.parentNode) {
+notification.parentNode.removeChild(notification);
+}
+}, 30000);
+}
+
+// قبول الرحلة
+function acceptTrip(requestId) {
+window.update(window.ref(window.db, `tripRequests/${requestId}`), {
+status: 'accepted',
+acceptedAt: Date.now()
+}).then(() => {
+// إزالة الإشعار
+const notification = document.querySelector(`[data-request-id="${requestId}"]`);
+if (notification && notification.parentNode) {
+notification.parentNode.removeChild(notification);
+}
+
+showNotification('تم قبول الرحلة', 'يمكنك الآن التواصل مع الراكب', 'success');
+
+// تحديث حالة السائق إلى مشغول
+document.getElementById('driverStatus').value = 'busy';
+updateDriverStatus();
+}).catch(error => {
+handleError(error, 'فشل في قبول الرحلة');
+});
+}
+
+// رفض الرحلة
+function rejectTrip(requestId) {
+window.update(window.ref(window.db, `tripRequests/${requestId}`), {
+status: 'rejected',
+rejectedAt: Date.now()
+}).then(() => {
+// إزالة الإشعار
+const notification = document.querySelector(`[data-request-id="${requestId}"]`);
+if (notification && notification.parentNode) {
+notification.parentNode.removeChild(notification);
+}
+}).catch(error => {
+handleError(error, 'فشل في رفض الرحلة');
+});
+}
+
+// تحديث حالة الرحلة للراكب
+function updateTripStatus(request, requestId) {
+const statusDiv = document.getElementById('tripStatus');
+const statusText = document.getElementById('tripStatusText');
+const cancelBtn = document.getElementById('cancelTripBtn');
+
+if (request.status === 'pending') {
+statusDiv.style.display = 'block';
+statusText.textContent = '⏳ في انتظار موافقة السائق...';
+statusDiv.className = 'trip-status';
+cancelBtn.style.display = 'block';
+currentTripRequestId = requestId;
+} else if (request.status === 'accepted') {
+statusDiv.style.display = 'block';
+statusText.textContent = '✅ تم قبول الرحلة! يمكنك التواصل مع السائق';
+statusDiv.className = 'trip-status active';
+cancelBtn.style.display = 'block';
+currentTripRequestId = requestId;
+
+// رسم المسار إلى السائق
+drawRouteToDriver(request.driverId);
+} else if (request.status === 'rejected') {
+statusDiv.style.display = 'block';
+statusText.textContent = '❌ تم رفض الرحلة. يمكنك البحث عن سائق آخر';
+statusDiv.className = 'trip-status';
+cancelBtn.style.display = 'none';
+currentTripRequestId = null;
+} else if (request.status === 'cancelled') {
+statusDiv.style.display = 'none';
+cancelBtn.style.display = 'none';
+currentTripRequestId = null;
+}
+}
+
+// رسم المسار إلى السائق
+function drawRouteToDriver(driverId) {
+const driversRef = window.ref(window.db, `locations/${driverId}`);
+window.get(driversRef).then((snapshot) => {
+if (snapshot.exists()) {
+const driverLocation = snapshot.val();
+
+// إزالة المسار السابق إن وجد
+if (routeControl) {
+currentMap.removeControl(routeControl);
+}
+
+// رسم المسار الجديد
+routeControl = L.Routing.control({
+waypoints: [
+L.latLng(currentLocation.lat, currentLocation.lng),
+L.latLng(driverLocation.lat, driverLocation.lng)
+],
+routeWhileDragging: false,
+addWaypoints: false,
+createMarker: function() { return null; }, // لا نريد علامات إضافية
+lineOptions: {
+styles: [{ color: '#667eea', weight: 4, opacity: 0.7 }]
+}
+}).addTo(currentMap);
+}
+}).catch(error => {
+handleError(error, 'فشل في رسم المسار');
+});
+}
+
+// عرض إشعار
+// تابع دالة showNotification
+function showNotification(title, content, type) {
+const notification = document.createElement('div');
+notification.className = 'notification';
+notification.innerHTML = `
+<div class="notification-title">${title}</div>
+<div class="notification-content">${content}</div>
+`;
+document.body.appendChild(notification);
+
+// إزالة الإشعار بعد 5 ثواني
+setTimeout(() => {
+if (notification.parentNode) {
+notification.parentNode.removeChild(notification);
+}
+}, 5000);
+}
+
+// تحديث حالة السائق
+function updateDriverStatus() {
+if (window.currentRole !== 'sayeq' || !window.currentUser) return;
+
+const status = document.getElementById('driverStatus').value;
+window.update(window.ref(window.db, `locations/${window.currentUser.uid}`), {
+status: status,
+lastUpdate: Date.now()
+}).catch(error => {
+handleError(error, 'فشل في تحديث الحالة');
+});
+}
+
+// تفعيل الرحلة
+function activateRide() {
+if (!currentLocation) {
+showMessage('error', 'يرجى السماح بتحديد الموقع أولاً');
+return;
+}
+
+if (window.currentRole === 'rakib') {
+// للراكب: البحث عن سائق
+showMessage('success', 'جاري البحث عن السائقين المتاحين...');
+// تحديث قائمة السائقين
+const driversRef = window.ref(window.db, 'locations');
+window.get(driversRef).then((snapshot) => {
+const locations = snapshot.val();
+updateDriversList(locations);
+}).catch(error => {
+handleError(error, 'فشل في البحث عن السائقين');
+});
+} else {
+// للسائق: تفعيل الخدمة
+const status = document.getElementById('driverStatus').value;
+if (status === 'offline') {
+document.getElementById('driverStatus').value = 'available';
+updateDriverStatus();
+}
+showMessage('success', 'تم تفعيل خدمة السائق بنجاح!');
+}
+}
+
+// معلومات الراكب
+function submitPassengerInfo() {
+const name = document.getElementById('passengerName').value.trim();
+const phone = document.getElementById('passengerPhone').value.trim();
+const idCard = document.getElementById('passengerIdCard').files[0];
+
+if (!name || !phone) {
+showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'passenger');
+return;
+}
+
+if (!isValidPhone(phone)) {
+showMessage('error', 'يرجى إدخال رقم هاتف صحيح (مثال: 0612345678)', 'passenger');
+return;
+}
+
+// حفظ البيانات محلياً
+const passengerData = { name, phone };
+localStorage.setItem('passengerData', JSON.stringify(passengerData));
+
+// حفظ البيانات في Firebase
+if (window.currentUser) {
+window.update(window.ref(window.db, `users/${window.currentUser.uid}`), {
+name: name,
+phone: phone,
+role: 'rakib',
+completedProfile: true,
+updatedAt: new Date().toISOString()
+}).then(() => {
+showMessage('success', 'تم حفظ البيانات بنجاح!', 'passenger');
+setTimeout(() => {
+showPage("mapPage");
+loadMap(name);
+startLocationTracking();
+}, 1500);
+}).catch(error => {
+handleError(error, 'فشل في حفظ البيانات');
+showMessage('error', 'فشل في حفظ البيانات', 'passenger');
+});
+} else {
+showMessage('error', 'خطأ في المصادقة', 'passenger');
+}
+}
+
+// معلومات السائق
+function submitDriverInfo() {
+const name = document.getElementById('driverName').value.trim();
+const phone = document.getElementById('driverPhone').value.trim();
+const carType = document.getElementById('carType').value.trim();
+const carColor = document.getElementById('carColor').value.trim();
+const plateNumber = document.getElementById('plateNumber').value.trim();
+const driverId = document.getElementById('driverId').files[0];
+const carCheck = document.getElementById('carCheck').files[0];
+
+if (!name || !phone || !carType || !carColor || !plateNumber) {
+showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'driver');
+return;
+}
+
+if (!isValidPhone(phone)) {
+showMessage('error', 'يرجى إدخال رقم هاتف صحيح (مثال: 0612345678)', 'driver');
+return;
+}
+
+// حفظ البيانات محلياً
+const driverData = { name, phone, carType, carColor, plateNumber };
+localStorage.setItem('driverData', JSON.stringify(driverData));
+
+// حفظ البيانات في Firebase
+if (window.currentUser) {
+window.update(window.ref(window.db, `users/${window.currentUser.uid}`), {
+name: name,
+phone: phone,
+carType: carType,
+carColor: carColor,
+plateNumber: plateNumber,
+role: 'sayeq',
+completedProfile: true,
+updatedAt: new Date().toISOString()
+}).then(() => {
+showMessage('success', 'تم حفظ البيانات بنجاح!', 'driver');
+}).catch(error => {
+handleError(error, 'فشل في حفظ البيانات');
+showMessage('error', 'فشل في حفظ البيانات', 'driver');
+});
+} else {
+showMessage('error', 'خطأ في المصادقة', 'driver');
+}
+}
+
+// عرض التعهد
+function showDeclaration() {
+const declarationBox = document.getElementById('declarationBox');
+declarationBox.innerHTML = `
+<h3>📜 تعهد السائق</h3>
+<p>أتعهد بأن:</p>
+<ul style="text-align: right; margin: 15px 0;">
+<li>جميع المعلومات المقدمة صحيحة ودقيقة</li>
+<li>سيارتي في حالة جيدة وصالحة للسير</li>
+<li>أحمل رخصة قيادة سارية المفعول</li>
+<li>سأتعامل مع الركاب بأدب واحترام</li>
+<li>سأتقيد بقوانين المرور وقواعد السلامة</li>
+<li>سأحافظ على نظافة السيارة</li>
+<li>لن أطلب أجرة أكثر من المتفق عليها</li>
+</ul>
+<p><strong>أوافق على هذا التعهد وأتحمل المسؤولية الكاملة.</strong></p>
+`;
+declarationBox.style.display = 'block';
+}
+
+// بدء خريطة السائق
+function startDriverMap() {
+const name = document.getElementById('driverName').value.trim();
+if (!name) {
+showMessage('error', 'يرجى ملء معلومات السائق أولاً', 'driver');
+return;
+}
+
+showPage("mapPage");
+loadMap(name);
+startLocationTracking();
+}
+
+// التحقق من صحة رقم الهاتف
+function isValidPhone(phone) {
+const phoneRegex = /^(06|07)[0-9]{8}$/;
+return phoneRegex.test(phone);
+}
+
+// تسجيل الخروج
+function logout() {
+// تنظيف البيانات المحلية
+localStorage.removeItem('driverData');
+localStorage.removeItem('passengerData');
+localStorage.removeItem('selectedRole');
+
+// إيقاف تتبع الموقع
+if (locationUpdateInterval) {
+clearInterval(locationUpdateInterval);
+}
+
+// إزالة الموقع من Firebase
+if (window.currentUser) {
+window.remove(window.ref(window.db, `locations/${window.currentUser.uid}`))
+.catch(error => console.error('خطأ في إزالة الموقع:', error));
+}
+
+// إعادة تعيين المتغيرات
+window.currentUser = null;
+window.currentRole = null;
+currentLocation = null;
+selectedDriver = null;
+currentTrip = null;
+currentTripRequestId = null;
+
+// إزالة الخريطة
+if (currentMap) {
+currentMap.remove();
+currentMap = null;
+}
+
+// العودة لصفحة تسجيل الدخول
+showPage("loginPage");
+showMessage('success', 'تم تسجيل الخروج بنجاح', 'login');
+}
+
+// معالجة الضغط على Enter في حقل الدردشة
+document.addEventListener('DOMContentLoaded', function() {
+const chatInput = document.getElementById('chatInput');
+if (chatInput) {
+chatInput.addEventListener('keypress', function(e) {
+if (e.key === 'Enter') {
+sendMessage();
+}
+});
+}
+});
+
+// معالجة تغيير حجم النافذة
+window.addEventListener('resize', function() {
+if (currentMap) {
+setTimeout(() => {
+currentMap.invalidateSize();
+}, 100);
+}
+});
+
+// منع إغلاق الصفحة عند وجود رحلة نشطة
+window.addEventListener('beforeunload', function(e) {
+if (currentTripRequestId) {
+e.preventDefault();
+e.returnValue = 'لديك رحلة نشطة. هل تريد حقاً إغلاق الصفحة؟';
+return e.returnValue;
+}
+});
+
+// تحسين الأداء - تنظيف الذاكرة
+window.addEventListener('unload', function() {
+if (locationUpdateInterval) {
+clearInterval(locationUpdateInterval);
+}
+if (currentMap) {
+currentMap.remove();
+}
+});
+
+// إضافة دعم للإشعارات المحلية (إذا كان متاحاً)
+if ('Notification' in window) {
+Notification.requestPermission();
+}
+
+function showBrowserNotification(title, body) {
+if ('Notification' in window && Notification.permission === 'granted') {
+new Notification(title, {
+body: body,
+icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚗</text></svg>',
+badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚗</text></svg>'
+});
+}
+}
+
+// تحسين تجربة المستخدم على الأجهزة المحمولة
+if ('serviceWorker' in navigator) {
+window.addEventListener('load', function() {
+navigator.serviceWorker.register('/sw.js')
+.then(function(registration) {
+console.log('ServiceWorker registration successful');
+}, function(err) {
+console.log('ServiceWorker registration failed: ', err);
+});
+});
+}
+
+// إضافة دعم للوضع المظلم (اختياري)
+function toggleDarkMode() {
+document.body.classList.toggle('dark-mode');
+localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+}
+
+// تحميل إعدادات الوضع المظلم
+document.addEventListener('DOMContentLoaded', function() {
+if (localStorage.getItem('darkMode') === 'true') {
+document.body.classList.add('dark-mode');
+}
+});
+
+// دالة لإعادة الاتصال التلقائي
+function reconnectToFirebase() {
+if (window.currentUser && currentLocation) {
+updateLocation();
+}
+}
+
+// إعادة الاتصال كل دقيقة في حالة انقطاع الاتصال
+setInterval(reconnectToFirebase, 60000);
+
+// دالة لحفظ حالة التطبيق
+function saveAppState() {
+const appState = {
+currentUser: window.currentUser,
+currentRole: window.currentRole,
+currentLocation: currentLocation,
+currentTripRequestId: currentTripRequestId
+};
+localStorage.setItem('appState', JSON.stringify(appState));
+}
+
+// دالة لاستعادة حالة التطبيق
+function restoreAppState() {
+const savedState = localStorage.getItem('appState');
+if (savedState) {
+try {
+const appState = JSON.parse(savedState);
+window.currentUser = appState.currentUser;
+window.currentRole = appState.currentRole;
+currentLocation = appState.currentLocation;
+currentTripRequestId = appState.currentTripRequestId;
+} catch (error) {
+console.error('خطأ في استعادة حالة التطبيق:', error);
+}
+}
+}
+
+// حفظ حالة التطبيق عند التغيير
+window.addEventListener('beforeunload', saveAppState);
+
+// استعادة حالة التطبيق عند التحميل
+window.addEventListener('load', restoreAppState);
+
+// دالة لتحسين الأداء - تأخير التحديثات
+let updateTimeout;
+function throttledUpdate(callback, delay = 1000) {
+if (updateTimeout) {
+clearTimeout(updateTimeout);
+}
+updateTimeout = setTimeout(callback, delay);
+}
+
+// تحسين تحديث الموقع
+const originalUpdateLocation = updateLocation;
+updateLocation = function() {
+throttledUpdate(originalUpdateLocation, 2000);
+};
+
+// دالة للتحقق من الاتصال بالإنترنت
+function checkConnection() {
+return navigator.onLine;
+}
+
+// معالجة انقطاع الاتصال
+window.addEventListener('offline', function() {
+showNotification('انقطع الاتصال', 'تم فقدان الاتصال بالإنترنت', 'warning');
+});
+
+window.addEventListener('online', function() {
+showNotification('تم استعادة الاتصال', 'تم الاتصال بالإنترنت مرة أخرى', 'success');
+reconnectToFirebase();
+});
+
+// دالة لتنظيف البيانات القديمة
+function cleanupOldData() {
+const oneHourAgo = Date.now() - (60 * 60 * 1000);
+
+if (window.db && window.currentUser) {
+// تنظيف المواقع القديمة
+const locationsRef = window.ref(window.db, 'locations');
+window.get(locationsRef).then((snapshot) => {
+const locations = snapshot.val();
+if (locations) {
+Object.keys(locations).forEach(userId => {
+const location = locations[userId];
+if (location.timestamp && location.timestamp < oneHourAgo) {
+window.remove(window.ref(window.db, `locations/${userId}`))
+.catch(error => console.error('خطأ في تنظيف البيانات:', error));
+}
+});
+}
+}).catch(error => console.error('خطأ في تنظيف البيانات:', error));
+}
+}
+
+// تنظيف البيانات كل ساعة
+setInterval(cleanupOldData, 60 * 60 * 1000);
+
+// دالة لإضافة تأثيرات بصرية
+function addVisualEffects() {
+// إضافة تأثير النقر على الأزرار
+document.addEventListener('click', function(e) {
+if (e.target.tagName === 'BUTTON') {
+e.target.style.transform = 'scale(0.95)';
+setTimeout(() => {
+e.target.style.transform = '';
+}, 150);
+}
+});
+
+// إضافة تأثير التحميل على الخريطة
+if (currentMap) {
+currentMap.on('movestart', function() {
+document.body.style.cursor = 'wait';
+});
+currentMap.on('moveend', function() {
+document.body.style.cursor = '';
+});
+}
+}
+
+// تطبيق التأثيرات البصرية عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', addVisualEffects);
+
+// دالة لإضافة اختصارات لوحة المفاتيح
+document.addEventListener('keydown', function(e) {
+// Ctrl + L للخروج
+if (e.ctrlKey && e.key === 'l') {
+e.preventDefault();
+logout();
+}
+// Escape لإغلاق الدردشة
+if (e.key === 'Escape') {
+closeChat();
+}
+// F5 لتحديث الموقع
+if (e.key === 'F5') {
+e.preventDefault();
+if (currentLocation) {
+updateLocation();
+showNotification('تم التحديث', 'تم تحديث الموقع بنجاح', 'success');
+}
+}
+});
+
+// رسالة ترحيب في وحدة التحكم
+console.log(`
+🚗 GRASIAS - تطبيق مشاركة الرحلات
+📱 الإصدار: 2.0
+🔧 تم تحميل جميع الميزات بنجاح!
+⌨️  اختصارات لوحة المفاتيح:
+   - Ctrl + L: تسجيل الخروج
+   - Escape: إغلاق الدردشة  
+   - F5: تحديث الموقع
+`);
+
+// إنهاء الكود
+console.log('✅ تم تحميل تطبيق GRASIAS بنجاح!');
+
+</script>
+
 </body>
 </html>

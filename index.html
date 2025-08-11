@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-/* نفس الـ CSS السابق - لم يتغير */
 * {
 box-sizing: border-box;
 }
@@ -87,6 +86,14 @@ box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 
 button:active {
 transform: translateY(0);
+}
+
+.facebook-btn {
+background: linear-gradient(135deg, #1877f2 0%, #42a5f5 100%);
+}
+
+.facebook-btn:hover {
+box-shadow: 0 8px 25px rgba(24, 119, 242, 0.3);
 }
 
 .choice {
@@ -515,6 +522,7 @@ color: #4a5568;
 font-size: 14px;
 }
 
+/* إضافة أنماط جديدة للوجهة والطبقات */
 .destination-input {
 background: #f8f9fa;
 border: 1px solid #e2e8f0;
@@ -561,35 +569,6 @@ margin-bottom: 8px;
 width: auto;
 margin-left: 10px;
 margin-bottom: 0;
-}
-
-/* إضافة أنماط للتسجيل البديل */
-.alternative-login {
-margin-top: 20px;
-padding-top: 20px;
-border-top: 1px solid #e2e8f0;
-}
-
-.alternative-login h3 {
-font-size: 18px;
-margin-bottom: 15px;
-color: #4a5568;
-}
-
-.loading-spinner {
-border: 3px solid #f3f3f3;
-border-top: 3px solid #667eea;
-border-radius: 50%;
-width: 30px;
-height: 30px;
-animation: spin 1s linear infinite;
-margin: 10px auto;
-display: none;
-}
-
-@keyframes spin {
-0% { transform: rotate(0deg); }
-100% { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {
@@ -641,24 +620,10 @@ max-width: none;
 <span>🧍‍♀️ راكب</span>
 </label>
 </div>
-
-<!-- تسجيل الدخول بـ Google (للمتصفح فقط) -->
-<button onclick="signInWithGoogle()" id="googleSignInBtn">🔐 تسجيل الدخول باستخدام Google</button>
-
-<!-- التسجيل البديل للتطبيقات -->
-<div class="alternative-login">
-<h3>أو سجل دخولك مباشرة:</h3>
-<input type="text" id="userName" placeholder="الاسم الكامل" required>
-<input type="email" id="userEmail" placeholder="البريد الإلكتروني" required>
-<button onclick="signInAlternative()">🚀 دخول مباشر</button>
+<button class="facebook-btn" onclick="signInWithFacebook()">📘 تسجيل الدخول باستخدام Facebook</button>
 </div>
 
-<div class="loading-spinner" id="loadingSpinner"></div>
-<div class="success-message" id="loginSuccess"></div>
-<div class="error-message" id="loginError"></div>
-</div>
-
-<!-- باقي الصفحات تبقى كما هي -->
+<!-- صفحة معلومات الراكب -->
 <div class="box" id="passengerPage">
 <h2>معلومات الراكب</h2>
 <div class="success-message" id="passengerSuccess"></div>
@@ -674,6 +639,7 @@ max-width: none;
 <button onclick="submitPassengerInfo()">متابعة ➡️</button>
 </div>
 
+<!-- صفحة معلومات السائق -->
 <div class="box" id="driverPage">
 <h2>معلومات السائق</h2>
 <div class="success-message" id="driverSuccess"></div>
@@ -700,7 +666,7 @@ max-width: none;
 <button onclick="startDriverMap()">متابعة ➡️</button>
 </div>
 
-<!-- صفحة الخريطة تبقى كما هي -->
+<!-- صفحة الخريطة -->
 <div id="mapPage">
 <div id="map"></div>
 <div class="sidebar">
@@ -710,6 +676,7 @@ max-width: none;
 </div>
 <h3 id="sidebarTitle">🚗 تفاصيل الرحلة</h3>
 
+<!-- اختيار طبقات الخريطة -->
 <div class="map-layers">
 <h4>🗺️ طبقات الخريطة:</h4>
 <div class="layer-option">
@@ -726,6 +693,7 @@ max-width: none;
 </div>
 </div>
 
+<!-- محتوى الراكب -->
 <div id="passengerContent">
 <div id="nearbyDrivers">
 <h4>السائقون القريبون:</h4>
@@ -733,6 +701,7 @@ max-width: none;
 </div>
 </div>
 
+<!-- محتوى السائق -->
 <div id="driverContent" style="display: none;">
 <label>حالة السائق:</label>
 <select id="driverStatus" onchange="updateDriverStatus()">
@@ -744,6 +713,7 @@ max-width: none;
 <label>عدد المقاعد المتاحة:</label>
 <input type="number" id="availableSeats" min="1" max="8" value="4">
 
+<!-- إدخال الوجهة للسائق -->
 <div class="destination-input">
 <h4>🎯 الوجهة:</h4>
 <input type="text" id="driverDestination" placeholder="أدخل وجهتك..." onchange="updateDriverDestination()">
@@ -753,6 +723,7 @@ max-width: none;
 <label>ملاحظات السائق:</label>
 <textarea id="driverNotes" placeholder="معلومات إضافية للركاب..." style="height: 60px;"></textarea>
 
+<!-- حاسبة المسافة والثمن -->
 <div class="distance-calculator">
 <h4>حاسبة الثمن:</h4>
 <div class="distance-input">
@@ -786,7 +757,7 @@ max-width: none;
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, get, child, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithPopup, FacebookAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyAekz29R9IwY1pygd4Mic5AX8XZ7A7Z4Fs",
@@ -802,12 +773,11 @@ measurementId: "G-6QBYM41CJ1"
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+const provider = new FacebookAuthProvider();
 
-// إعداد Google Auth للتطبيقات المحمولة
-provider.setCustomParameters({
-prompt: 'select_account'
-});
+// إضافة صلاحيات Facebook
+provider.addScope('email');
+provider.addScope('public_profile');
 
 // جعل المتغيرات والدوال متاحة عالمياً
 window.currentUser = null;
@@ -822,197 +792,87 @@ window.push = push;
 window.onValue = onValue;
 window.remove = remove;
 
-// فحص إذا كان المستخدم في تطبيق أم متصفح
-function isInApp() {
-return window.navigator.userAgent.includes('wv') || 
-       window.navigator.userAgent.includes('Version/') && window.navigator.userAgent.includes('Mobile');
-}
-
-// تسجيل الدخول بـ Google (محسن للتطبيقات)
-window.signInWithGoogle = async () => {
+window.signInWithFacebook = () => {
 const roleInput = document.querySelector('input[name="role"]:checked');
 if (!roleInput) {
-showMessage('error', "يرجى اختيار الدور قبل تسجيل الدخول", 'login');
+alert("يرجى اختيار الدور قبل تسجيل الدخول");
 return;
 }
 
 window.currentRole = roleInput.value;
-showLoading(true);
 
-try {
-let result;
-
-// إذا كان في تطبيق، استخدم redirect بدلاً من popup
-if (isInApp()) {
-// للتطبيقات المحمولة - استخدام redirect
-await signInWithRedirect(auth, provider);
-// النتيجة ستأتي في getRedirectResult عند إعادة تحميل الصفحة
-return;
-} else {
-// للمتصفحات العادية - استخدام popup
-result = await signInWithPopup(auth, provider);
-}
-
-if (result) {
-await handleSuccessfulLogin(result.user);
-}
-} catch (error) {
-console.error("خطأ في تسجيل الدخول:", error);
-showLoading(false);
-
-if (error.code === 'auth/popup-blocked') {
-showMessage('error', 'تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة أو استخدام التسجيل المباشر.', 'login');
-} else if (error.code === 'auth/cancelled-popup-request') {
-showMessage('error', 'تم إلغاء تسجيل الدخول.', 'login');
-} else {
-showMessage('error', 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى أو استخدام التسجيل المباشر.', 'login');
-}
-}
-};
-
-// التسجيل البديل (بدون Google)
-window.signInAlternative = async () => {
-const roleInput = document.querySelector('input[name="role"]:checked');
-const userName = document.getElementById('userName').value.trim();
-const userEmail = document.getElementById('userEmail').value.trim();
-
-if (!roleInput) {
-showMessage('error', "يرجى اختيار الدور", 'login');
-return;
-}
-
-if (!userName || !userEmail) {
-showMessage('error', "يرجى ملء جميع الحقول", 'login');
-return;
-}
-
-if (!isValidEmail(userEmail)) {
-showMessage('error', "يرجى إدخال بريد إلكتروني صحيح", 'login');
-return;
-}
-
-window.currentRole = roleInput.value;
-showLoading(true);
-
-try {
-// إنشاء مستخدم وهمي للتسجيل المباشر
-const fakeUser = {
-uid: generateUID(),
-displayName: userName,
-email: userEmail,
-photoURL: null
-};
-
-await handleSuccessfulLogin(fakeUser);
-} catch (error) {
-console.error("خطأ في التسجيل المباشر:", error);
-showMessage('error', 'فشل في التسجيل. يرجى المحاولة مرة أخرى.', 'login');
-showLoading(false);
-}
-};
-
-// معالجة تسجيل الدخول الناجح
-async function handleSuccessfulLogin(user) {
+signInWithPopup(auth, provider)
+.then((result) => {
+const user = result.user;
 window.currentUser = user;
 
-try {
-const userRef = ref(db, `users/${user.uid}`);
-const snapshot = await get(userRef);
+// الحصول على معلومات إضافية من Facebook
+const credential = FacebookAuthProvider.credentialFromResult(result);
+const accessToken = credential.accessToken;
 
+const userRef = ref(db, `users/${user.uid}`);
+get(userRef).then((snapshot) => {
 if (snapshot.exists()) {
 const userData = snapshot.val();
 window.currentRole = userData.role;
-showMessage('success', 'تم تسجيل الدخول بنجاح!', 'login');
-setTimeout(() => {
 showPage("mapPage");
 loadMap(user.displayName);
 startLocationTracking();
-}, 1500);
 } else {
-await set(userRef, {
+set(userRef, {
 name: user.displayName,
 email: user.email,
 role: window.currentRole,
+facebookId: user.providerData[0].uid,
+photoURL: user.photoURL,
 createdAt: new Date().toISOString()
 });
 
-showMessage('success', 'تم إنشاء الحساب بنجاح!', 'login');
-setTimeout(() => {
 if (window.currentRole === "rakib") {
 showPage("passengerPage");
 } else {
 showPage("driverPage");
 }
-}, 1500);
-}
-} catch (error) {
-console.error("خطأ في حفظ بيانات المستخدم:", error);
-showMessage('error', 'حدث خطأ في حفظ البيانات', 'login');
-} finally {
-showLoading(false);
-}
-}
-// حفظ الدور المختار قبل الـ redirect
-const originalSignInWithGoogle = window.signInWithGoogle;
-window.signInWithGoogle = async () => {
-const roleInput = document.querySelector('input[name="role"]:checked');
-if (!roleInput) {
-showMessage('error', "يرجى اختيار الدور قبل تسجيل الدخول", 'login');
-return;
-}
-
-// حفظ الدور في localStorage قبل الـ redirect
-localStorage.setItem('selectedRole', roleInput.value);
-await originalSignInWithGoogle();
-};
-
-// دوال مساعدة
-function generateUID() {
-return 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-}
-
-function isValidEmail(email) {
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-return emailRegex.test(email);
-}
-
-function showLoading(show) {
-const spinner = document.getElementById('loadingSpinner');
-const googleBtn = document.getElementById('googleSignInBtn');
-const altBtn = document.querySelector('.alternative-login button');
-
-if (show) {
-spinner.style.display = 'block';
-googleBtn.disabled = true;
-altBtn.disabled = true;
-googleBtn.textContent = 'جاري تسجيل الدخول...';
-} else {
-spinner.style.display = 'none';
-googleBtn.disabled = false;
-altBtn.disabled = false;
-googleBtn.textContent = '🔐 تسجيل الدخول باستخدام Google';
-}
-}
-
-// إخفاء/إظهار تسجيل الدخول بـ Google حسب البيئة
-document.addEventListener('DOMContentLoaded', () => {
-const googleBtn = document.getElementById('googleSignInBtn');
-const altSection = document.querySelector('.alternative-login');
-
-if (isInApp()) {
-// في التطبيق - إعطاء أولوية للتسجيل المباشر
-altSection.style.order = '-1';
-googleBtn.style.opacity = '0.7';
-googleBtn.innerHTML = '🔐 تسجيل الدخول باستخدام Google<br><small>(قد لا يعمل في التطبيق)</small>';
 }
 });
+})
+.catch((error) => {
+console.error("خطأ في تسجيل الدخول:", error);
+let errorMessage = "فشل تسجيل الدخول";
 
+switch(error.code) {
+case 'auth/account-exists-with-different-credential':
+errorMessage = "يوجد حساب بنفس البريد الإلكتروني مع مزود آخر";
+break;
+case 'auth/auth-domain-config-required':
+errorMessage = "إعداد المجال مطلوب";
+break;
+case 'auth/cancelled-popup-request':
+errorMessage = "تم إلغاء طلب تسجيل الدخول";
+break;
+case 'auth/operation-not-allowed':
+errorMessage = "تسجيل الدخول بـ Facebook غير مفعل";
+break;
+case 'auth/popup-blocked':
+errorMessage = "تم حظر النافذة المنبثقة";
+break;
+case 'auth/popup-closed-by-user':
+errorMessage = "تم إغلاق النافذة من قبل المستخدم";
+break;
+case 'auth/unauthorized-domain':
+errorMessage = "المجال غير مصرح به";
+break;
+default:
+errorMessage = error.message;
+}
+alert(errorMessage);
+});
+};
 </script>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 <script>
-// باقي الكود JavaScript يبقى كما هو...
 let currentMap = null;
 let currentMarker = null;
 let driversMarkers = [];
@@ -1063,29 +923,19 @@ const successEl = document.getElementById(pagePrefix + 'Success');
 const errorEl = document.getElementById(pagePrefix + 'Error');
 
 if (type === 'success') {
-if (successEl) {
 successEl.textContent = message;
 successEl.style.display = 'block';
-}
-if (errorEl) errorEl.style.display = 'none';
+errorEl.style.display = 'none';
 } else {
-if (errorEl) {
 errorEl.textContent = message;
 errorEl.style.display = 'block';
-}
-if (successEl) successEl.style.display = 'none';
+successEl.style.display = 'none';
 }
 
 setTimeout(() => {
-if (successEl) successEl.style.display = 'none';
-if (errorEl) errorEl.style.display = 'none';
+successEl.style.display = 'none';
+errorEl.style.display = 'none';
 }, 5000);
-}
-
-// تحسين معالجة الأخطاء
-function handleError(error, userMessage) {
-console.error('خطأ:', error);
-showMessage('error', userMessage || 'حدث خطأ غير متوقع');
 }
 
 // تغيير طبقة الخريطة
@@ -1118,10 +968,11 @@ destinationDisplay.style.display = 'none';
 if (window.currentUser) {
 window.update(window.ref(window.db, `locations/${window.currentUser.uid}`), {
 destination: destination
-}).catch(error => handleError(error, 'فشل في تحديث الوجهة'));
+});
 }
 }
 
+// حساب ثمن المسافة
 // حساب ثمن المسافة
 function calculatePrice() {
 const distance = parseFloat(document.getElementById('distanceInput').value);
@@ -1188,44 +1039,20 @@ currentMarker = L.marker([lat, lng], { icon }).addTo(currentMap)
 // بدء تتبع الموقع
 startLocationTracking();
 }, (error) => {
-handleError(error, "تعذر تحديد موقعك. يرجى التأكد من تفعيل خدمة الموقع.");
+console.error("خطأ في تحديد الموقع:", error);
+alert("⚠️ تعذر تحديد موقعك. يرجى التأكد من تفعيل خدمة الموقع.");
 });
 } else {
-showMessage('error', "المتصفح لا يدعم تحديد الموقع.");
+alert("⚠️ المتصفح لا يدعم تحديد الموقع.");
 }
 }
 
-// تحسين تتبع الموقع
-let locationUpdateInterval;
-
+// تتبع الموقع المباشر
 function startLocationTracking() {
 if (!window.currentUser) return;
 
-// تنظيف الفاصل الزمني السابق
-if (locationUpdateInterval) {
-clearInterval(locationUpdateInterval);
-}
-
-// تحديث الموقع كل 15 ثانية
-locationUpdateInterval = setInterval(() => {
-updateLocation();
-}, 15000);
-
-// تحديث فوري
-updateLocation();
-
-// مراقبة مواقع المستخدمين الآخرين
-if (window.currentRole === 'rakib') {
-watchDrivers();
-} else {
-watchPassengers();
-}
-
-// مراقبة طلبات الرحلات
-watchTripRequests();
-}
-
-function updateLocation() {
+// تحديث الموقع كل 10 ثوان
+setInterval(() => {
 if (navigator.geolocation && currentLocation) {
 navigator.geolocation.getCurrentPosition(position => {
 const newLocation = {
@@ -1250,8 +1077,7 @@ newLocation.destination = driverData.destination || '';
 }
 
 // تحديث الموقع في Firebase
-window.set(window.ref(window.db, `locations/${window.currentUser.uid}`), newLocation)
-.catch(error => handleError(error, 'فشل في تحديث الموقع'));
+window.set(window.ref(window.db, `locations/${window.currentUser.uid}`), newLocation);
 
 // تحديث الموقع المحلي
 currentLocation = { lat: newLocation.lat, lng: newLocation.lng };
@@ -1260,10 +1086,19 @@ currentLocation = { lat: newLocation.lat, lng: newLocation.lng };
 if (currentMarker) {
 currentMarker.setLatLng([newLocation.lat, newLocation.lng]);
 }
-}, error => {
-handleError(error, 'فشل في تحديث الموقع');
 });
 }
+}, 10000);
+
+// مراقبة مواقع المستخدمين الآخرين
+if (window.currentRole === 'rakib') {
+watchDrivers();
+} else {
+watchPassengers();
+}
+
+// مراقبة طلبات الرحلات
+watchTripRequests();
 }
 
 // مراقبة السائقين للركاب
@@ -1273,8 +1108,6 @@ window.onValue(driversRef, (snapshot) => {
 const locations = snapshot.val();
 updateDriversOnMap(locations);
 updateDriversList(locations);
-}, error => {
-handleError(error, 'فشل في تحميل مواقع السائقين');
 });
 }
 
@@ -1284,8 +1117,6 @@ const passengersRef = window.ref(window.db, 'locations');
 window.onValue(passengersRef, (snapshot) => {
 const locations = snapshot.val();
 updatePassengersOnMap(locations);
-}, error => {
-handleError(error, 'فشل في تحميل مواقع الركاب');
 });
 }
 
@@ -1418,7 +1249,7 @@ function callDriver(phone) {
 if (phone && phone !== 'غير متوفر') {
 window.open(`tel:${phone}`, '_self');
 } else {
-showMessage('error', 'رقم الهاتف غير متوفر');
+alert('رقم الهاتف غير متوفر');
 }
 }
 
@@ -1456,8 +1287,6 @@ chatMessages.appendChild(messageDiv);
 });
 chatMessages.scrollTop = chatMessages.scrollHeight;
 }
-}, error => {
-handleError(error, 'فشل في تحميل الرسائل');
 });
 }
 
@@ -1476,11 +1305,9 @@ text: messageText,
 senderId: window.currentUser.uid,
 senderName: window.currentUser.displayName,
 timestamp: Date.now()
-}).then(() => {
-chatInput.value = '';
-}).catch(error => {
-handleError(error, 'فشل في إرسال الرسالة');
 });
+
+chatInput.value = '';
 }
 
 // اختيار سائق
@@ -1501,8 +1328,6 @@ window.push(window.ref(window.db, 'tripRequests'), tripRequest)
 .then((ref) => {
 currentTripRequestId = ref.key;
 showNotification('تم إرسال طلب الرحلة', 'في انتظار موافقة السائق...', 'info');
-}).catch(error => {
-handleError(error, 'فشل في إرسال طلب الرحلة');
 });
 }
 
@@ -1514,7 +1339,8 @@ window.update(window.ref(window.db, `tripRequests/${currentTripRequestId}`), {
 status: 'cancelled',
 cancelledAt: Date.now(),
 cancelledBy: window.currentUser.uid
-}).then(() => {
+});
+
 // إزالة المسار من الخريطة
 if (routeControl) {
 currentMap.removeControl(routeControl);
@@ -1529,9 +1355,6 @@ currentTripRequestId = null;
 selectedDriver = null;
 
 showNotification('تم إلغاء الرحلة', 'يمكنك البحث عن سائق آخر', 'info');
-}).catch(error => {
-handleError(error, 'فشل في إلغاء الرحلة');
-});
 }
 }
 
@@ -1555,8 +1378,6 @@ if (window.currentRole === 'rakib' && request.passengerId === window.currentUser
 updateTripStatus(request, requestId);
 }
 });
-}, error => {
-handleError(error, 'فشل في مراقبة طلبات الرحلات');
 });
 }
 
@@ -1594,7 +1415,8 @@ function acceptTrip(requestId) {
 window.update(window.ref(window.db, `tripRequests/${requestId}`), {
 status: 'accepted',
 acceptedAt: Date.now()
-}).then(() => {
+});
+
 // إزالة الإشعار
 const notification = document.querySelector(`[data-request-id="${requestId}"]`);
 if (notification && notification.parentNode) {
@@ -1606,9 +1428,6 @@ showNotification('تم قبول الرحلة', 'يمكنك الآن التواص
 // تحديث حالة السائق إلى مشغول
 document.getElementById('driverStatus').value = 'busy';
 updateDriverStatus();
-}).catch(error => {
-handleError(error, 'فشل في قبول الرحلة');
-});
 }
 
 // رفض الرحلة
@@ -1616,15 +1435,13 @@ function rejectTrip(requestId) {
 window.update(window.ref(window.db, `tripRequests/${requestId}`), {
 status: 'rejected',
 rejectedAt: Date.now()
-}).then(() => {
+});
+
 // إزالة الإشعار
 const notification = document.querySelector(`[data-request-id="${requestId}"]`);
 if (notification && notification.parentNode) {
 notification.parentNode.removeChild(notification);
 }
-}).catch(error => {
-handleError(error, 'فشل في رفض الرحلة');
-});
 }
 
 // تحديث حالة الرحلة للراكب
@@ -1687,13 +1504,10 @@ styles: [{ color: '#667eea', weight: 4, opacity: 0.7 }]
 }
 }).addTo(currentMap);
 }
-}).catch(error => {
-handleError(error, 'فشل في رسم المسار');
 });
 }
 
 // عرض إشعار
-// تابع دالة showNotification
 function showNotification(title, content, type) {
 const notification = document.createElement('div');
 notification.className = 'notification';
@@ -1703,7 +1517,6 @@ notification.innerHTML = `
 `;
 document.body.appendChild(notification);
 
-// إزالة الإشعار بعد 5 ثواني
 setTimeout(() => {
 if (notification.parentNode) {
 notification.parentNode.removeChild(notification);
@@ -1713,213 +1526,126 @@ notification.parentNode.removeChild(notification);
 
 // تحديث حالة السائق
 function updateDriverStatus() {
-if (window.currentRole !== 'sayeq' || !window.currentUser) return;
-
 const status = document.getElementById('driverStatus').value;
+if (window.currentUser && currentLocation) {
 window.update(window.ref(window.db, `locations/${window.currentUser.uid}`), {
-status: status,
-lastUpdate: Date.now()
-}).catch(error => {
-handleError(error, 'فشل في تحديث الحالة');
+status: status
 });
+}
 }
 
 // تفعيل الرحلة
 function activateRide() {
-if (!currentLocation) {
-showMessage('error', 'يرجى السماح بتحديد الموقع أولاً');
-return;
-}
-
 if (window.currentRole === 'rakib') {
 // للراكب: البحث عن سائق
 showMessage('success', 'جاري البحث عن السائقين المتاحين...');
-// تحديث قائمة السائقين
-const driversRef = window.ref(window.db, 'locations');
-window.get(driversRef).then((snapshot) => {
-const locations = snapshot.val();
-updateDriversList(locations);
-}).catch(error => {
-handleError(error, 'فشل في البحث عن السائقين');
-});
 } else {
 // للسائق: تفعيل الخدمة
 const status = document.getElementById('driverStatus').value;
-if (status === 'offline') {
-document.getElementById('driverStatus').value = 'available';
-updateDriverStatus();
-}
+if (status === 'available') {
 showMessage('success', 'تم تفعيل خدمة السائق بنجاح!');
+} else {
+showMessage('error', 'يجب تغيير حالتك إلى "متاح" لتفعيل الخدمة');
+}
 }
 }
 
-// معلومات الراكب
+// إرسال معلومات الراكب
 function submitPassengerInfo() {
-const name = document.getElementById('passengerName').value.trim();
-const phone = document.getElementById('passengerPhone').value.trim();
+const name = document.getElementById('passengerName').value;
+const phone = document.getElementById('passengerPhone').value;
 const idCard = document.getElementById('passengerIdCard').files[0];
 
-if (!name || !phone) {
+if (!name || !phone || !idCard) {
 showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'passenger');
 return;
 }
 
-if (!isValidPhone(phone)) {
-showMessage('error', 'يرجى إدخال رقم هاتف صحيح (مثال: 0612345678)', 'passenger');
-return;
-}
-
 // حفظ البيانات محلياً
-const passengerData = { name, phone };
-localStorage.setItem('passengerData', JSON.stringify(passengerData));
+localStorage.setItem('passengerData', JSON.stringify({ name, phone }));
 
-// حفظ البيانات في Firebase
-if (window.currentUser) {
+// حفظ في Firebase
 window.update(window.ref(window.db, `users/${window.currentUser.uid}`), {
 name: name,
 phone: phone,
-role: 'rakib',
-completedProfile: true,
-updatedAt: new Date().toISOString()
+profileComplete: true
 }).then(() => {
-showMessage('success', 'تم حفظ البيانات بنجاح!', 'passenger');
+showMessage('success', 'تم حفظ معلوماتك بنجاح!', 'passenger');
 setTimeout(() => {
 showPage("mapPage");
 loadMap(name);
 startLocationTracking();
-}, 1500);
-}).catch(error => {
-handleError(error, 'فشل في حفظ البيانات');
-showMessage('error', 'فشل في حفظ البيانات', 'passenger');
+}, 2000);
 });
-} else {
-showMessage('error', 'خطأ في المصادقة', 'passenger');
-}
 }
 
-// معلومات السائق
-function submitDriverInfo() {
-const name = document.getElementById('driverName').value.trim();
-const phone = document.getElementById('driverPhone').value.trim();
-const carType = document.getElementById('carType').value.trim();
-const carColor = document.getElementById('carColor').value.trim();
-const plateNumber = document.getElementById('plateNumber').value.trim();
-const driverId = document.getElementById('driverId').files[0];
-const carCheck = document.getElementById('carCheck').files[0];
+// بدء خريطة السائق
+function startDriverMap() {
+const name = document.getElementById('driverName').value;
+const phone = document.getElementById('driverPhone').value;
+const carType = document.getElementById('carType').value;
+const carColor = document.getElementById('carColor').value;
+const plateNumber = document.getElementById('plateNumber').value;
 
 if (!name || !phone || !carType || !carColor || !plateNumber) {
 showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'driver');
 return;
 }
 
-if (!isValidPhone(phone)) {
-showMessage('error', 'يرجى إدخال رقم هاتف صحيح (مثال: 0612345678)', 'driver');
-return;
-}
-
 // حفظ البيانات محلياً
-const driverData = { name, phone, carType, carColor, plateNumber };
-localStorage.setItem('driverData', JSON.stringify(driverData));
+localStorage.setItem('driverData', JSON.stringify({
+name, phone, carType, carColor, plateNumber
+}));
 
-// حفظ البيانات في Firebase
-if (window.currentUser) {
+// حفظ في Firebase
 window.update(window.ref(window.db, `users/${window.currentUser.uid}`), {
 name: name,
 phone: phone,
 carType: carType,
 carColor: carColor,
 plateNumber: plateNumber,
-role: 'sayeq',
-completedProfile: true,
-updatedAt: new Date().toISOString()
+profileComplete: true
 }).then(() => {
-showMessage('success', 'تم حفظ البيانات بنجاح!', 'driver');
-}).catch(error => {
-handleError(error, 'فشل في حفظ البيانات');
-showMessage('error', 'فشل في حفظ البيانات', 'driver');
+showMessage('success', 'تم حفظ معلوماتك بنجاح!', 'driver');
+setTimeout(() => {
+showPage("mapPage");
+loadMap(name);
+startLocationTracking();
+}, 2000);
 });
-} else {
-showMessage('error', 'خطأ في المصادقة', 'driver');
-}
 }
 
 // عرض التعهد
 function showDeclaration() {
 const declarationBox = document.getElementById('declarationBox');
 declarationBox.innerHTML = `
-<h3>📜 تعهد السائق</h3>
+<h4>تعهد السائق</h4>
 <p>أتعهد بأن:</p>
-<ul style="text-align: right; margin: 15px 0;">
+<ul style="text-align: right;">
 <li>جميع المعلومات المقدمة صحيحة ودقيقة</li>
-<li>سيارتي في حالة جيدة وصالحة للسير</li>
+<li>سيارتي في حالة جيدة وصالحة للقيادة</li>
 <li>أحمل رخصة قيادة سارية المفعول</li>
-<li>سأتعامل مع الركاب بأدب واحترام</li>
-<li>سأتقيد بقوانين المرور وقواعد السلامة</li>
-<li>سأحافظ على نظافة السيارة</li>
-<li>لن أطلب أجرة أكثر من المتفق عليها</li>
+<li>سأقوم بتوفير خدمة آمنة ومهذبة للركاب</li>
+<li>سأحترم قوانين المرور وأنظمة السلامة</li>
 </ul>
-<p><strong>أوافق على هذا التعهد وأتحمل المسؤولية الكاملة.</strong></p>
 `;
 declarationBox.style.display = 'block';
 }
 
-// بدء خريطة السائق
-function startDriverMap() {
-const name = document.getElementById('driverName').value.trim();
-if (!name) {
-showMessage('error', 'يرجى ملء معلومات السائق أولاً', 'driver');
-return;
-}
-
-showPage("mapPage");
-loadMap(name);
-startLocationTracking();
-}
-
-// التحقق من صحة رقم الهاتف
-function isValidPhone(phone) {
-const phoneRegex = /^(06|07)[0-9]{8}$/;
-return phoneRegex.test(phone);
-}
-
 // تسجيل الخروج
 function logout() {
-// تنظيف البيانات المحلية
-localStorage.removeItem('driverData');
-localStorage.removeItem('passengerData');
-localStorage.removeItem('selectedRole');
-
-// إيقاف تتبع الموقع
-if (locationUpdateInterval) {
-clearInterval(locationUpdateInterval);
-}
-
-// إزالة الموقع من Firebase
 if (window.currentUser) {
-window.remove(window.ref(window.db, `locations/${window.currentUser.uid}`))
-.catch(error => console.error('خطأ في إزالة الموقع:', error));
+// إزالة الموقع من Firebase
+window.set(window.ref(window.db, `locations/${window.currentUser.uid}`), null);
 }
 
-// إعادة تعيين المتغيرات
 window.currentUser = null;
 window.currentRole = null;
-currentLocation = null;
-selectedDriver = null;
-currentTrip = null;
-currentTripRequestId = null;
-
-// إزالة الخريطة
-if (currentMap) {
-currentMap.remove();
-currentMap = null;
+localStorage.clear();
+showPage('loginPage');
 }
 
-// العودة لصفحة تسجيل الدخول
-showPage("loginPage");
-showMessage('success', 'تم تسجيل الخروج بنجاح', 'login');
-}
-
-// معالجة الضغط على Enter في حقل الدردشة
+// إضافة مستمع لإرسال الرسالة بالضغط على Enter
 document.addEventListener('DOMContentLoaded', function() {
 const chatInput = document.getElementById('chatInput');
 if (chatInput) {
@@ -1930,235 +1656,6 @@ sendMessage();
 });
 }
 });
-
-// معالجة تغيير حجم النافذة
-window.addEventListener('resize', function() {
-if (currentMap) {
-setTimeout(() => {
-currentMap.invalidateSize();
-}, 100);
-}
-});
-
-// منع إغلاق الصفحة عند وجود رحلة نشطة
-window.addEventListener('beforeunload', function(e) {
-if (currentTripRequestId) {
-e.preventDefault();
-e.returnValue = 'لديك رحلة نشطة. هل تريد حقاً إغلاق الصفحة؟';
-return e.returnValue;
-}
-});
-
-// تحسين الأداء - تنظيف الذاكرة
-window.addEventListener('unload', function() {
-if (locationUpdateInterval) {
-clearInterval(locationUpdateInterval);
-}
-if (currentMap) {
-currentMap.remove();
-}
-});
-
-// إضافة دعم للإشعارات المحلية (إذا كان متاحاً)
-if ('Notification' in window) {
-Notification.requestPermission();
-}
-
-function showBrowserNotification(title, body) {
-if ('Notification' in window && Notification.permission === 'granted') {
-new Notification(title, {
-body: body,
-icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚗</text></svg>',
-badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚗</text></svg>'
-});
-}
-}
-
-// تحسين تجربة المستخدم على الأجهزة المحمولة
-if ('serviceWorker' in navigator) {
-window.addEventListener('load', function() {
-navigator.serviceWorker.register('/sw.js')
-.then(function(registration) {
-console.log('ServiceWorker registration successful');
-}, function(err) {
-console.log('ServiceWorker registration failed: ', err);
-});
-});
-}
-
-// إضافة دعم للوضع المظلم (اختياري)
-function toggleDarkMode() {
-document.body.classList.toggle('dark-mode');
-localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-}
-
-// تحميل إعدادات الوضع المظلم
-document.addEventListener('DOMContentLoaded', function() {
-if (localStorage.getItem('darkMode') === 'true') {
-document.body.classList.add('dark-mode');
-}
-});
-
-// دالة لإعادة الاتصال التلقائي
-function reconnectToFirebase() {
-if (window.currentUser && currentLocation) {
-updateLocation();
-}
-}
-
-// إعادة الاتصال كل دقيقة في حالة انقطاع الاتصال
-setInterval(reconnectToFirebase, 60000);
-
-// دالة لحفظ حالة التطبيق
-function saveAppState() {
-const appState = {
-currentUser: window.currentUser,
-currentRole: window.currentRole,
-currentLocation: currentLocation,
-currentTripRequestId: currentTripRequestId
-};
-localStorage.setItem('appState', JSON.stringify(appState));
-}
-
-// دالة لاستعادة حالة التطبيق
-function restoreAppState() {
-const savedState = localStorage.getItem('appState');
-if (savedState) {
-try {
-const appState = JSON.parse(savedState);
-window.currentUser = appState.currentUser;
-window.currentRole = appState.currentRole;
-currentLocation = appState.currentLocation;
-currentTripRequestId = appState.currentTripRequestId;
-} catch (error) {
-console.error('خطأ في استعادة حالة التطبيق:', error);
-}
-}
-}
-
-// حفظ حالة التطبيق عند التغيير
-window.addEventListener('beforeunload', saveAppState);
-
-// استعادة حالة التطبيق عند التحميل
-window.addEventListener('load', restoreAppState);
-
-// دالة لتحسين الأداء - تأخير التحديثات
-let updateTimeout;
-function throttledUpdate(callback, delay = 1000) {
-if (updateTimeout) {
-clearTimeout(updateTimeout);
-}
-updateTimeout = setTimeout(callback, delay);
-}
-
-// تحسين تحديث الموقع
-const originalUpdateLocation = updateLocation;
-updateLocation = function() {
-throttledUpdate(originalUpdateLocation, 2000);
-};
-
-// دالة للتحقق من الاتصال بالإنترنت
-function checkConnection() {
-return navigator.onLine;
-}
-
-// معالجة انقطاع الاتصال
-window.addEventListener('offline', function() {
-showNotification('انقطع الاتصال', 'تم فقدان الاتصال بالإنترنت', 'warning');
-});
-
-window.addEventListener('online', function() {
-showNotification('تم استعادة الاتصال', 'تم الاتصال بالإنترنت مرة أخرى', 'success');
-reconnectToFirebase();
-});
-
-// دالة لتنظيف البيانات القديمة
-function cleanupOldData() {
-const oneHourAgo = Date.now() - (60 * 60 * 1000);
-
-if (window.db && window.currentUser) {
-// تنظيف المواقع القديمة
-const locationsRef = window.ref(window.db, 'locations');
-window.get(locationsRef).then((snapshot) => {
-const locations = snapshot.val();
-if (locations) {
-Object.keys(locations).forEach(userId => {
-const location = locations[userId];
-if (location.timestamp && location.timestamp < oneHourAgo) {
-window.remove(window.ref(window.db, `locations/${userId}`))
-.catch(error => console.error('خطأ في تنظيف البيانات:', error));
-}
-});
-}
-}).catch(error => console.error('خطأ في تنظيف البيانات:', error));
-}
-}
-
-// تنظيف البيانات كل ساعة
-setInterval(cleanupOldData, 60 * 60 * 1000);
-
-// دالة لإضافة تأثيرات بصرية
-function addVisualEffects() {
-// إضافة تأثير النقر على الأزرار
-document.addEventListener('click', function(e) {
-if (e.target.tagName === 'BUTTON') {
-e.target.style.transform = 'scale(0.95)';
-setTimeout(() => {
-e.target.style.transform = '';
-}, 150);
-}
-});
-
-// إضافة تأثير التحميل على الخريطة
-if (currentMap) {
-currentMap.on('movestart', function() {
-document.body.style.cursor = 'wait';
-});
-currentMap.on('moveend', function() {
-document.body.style.cursor = '';
-});
-}
-}
-
-// تطبيق التأثيرات البصرية عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', addVisualEffects);
-
-// دالة لإضافة اختصارات لوحة المفاتيح
-document.addEventListener('keydown', function(e) {
-// Ctrl + L للخروج
-if (e.ctrlKey && e.key === 'l') {
-e.preventDefault();
-logout();
-}
-// Escape لإغلاق الدردشة
-if (e.key === 'Escape') {
-closeChat();
-}
-// F5 لتحديث الموقع
-if (e.key === 'F5') {
-e.preventDefault();
-if (currentLocation) {
-updateLocation();
-showNotification('تم التحديث', 'تم تحديث الموقع بنجاح', 'success');
-}
-}
-});
-
-// رسالة ترحيب في وحدة التحكم
-console.log(`
-🚗 GRASIAS - تطبيق مشاركة الرحلات
-📱 الإصدار: 2.0
-🔧 تم تحميل جميع الميزات بنجاح!
-⌨️  اختصارات لوحة المفاتيح:
-   - Ctrl + L: تسجيل الخروج
-   - Escape: إغلاق الدردشة  
-   - F5: تحديث الموقع
-`);
-
-// إنهاء الكود
-console.log('✅ تم تحميل تطبيق GRASIAS بنجاح!');
-
 </script>
-
 </body>
 </html>

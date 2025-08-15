@@ -586,31 +586,30 @@
     <!-- صفحة تسجيل الدخول -->
     <div class="container">
 <div id="loginPage" class="page active">
-    <div class="container">
-        <div class="logo">
-            <h1>🚗</h1>
-            <h1>مشاركة الرحلات</h1>
-            <p>أدخل رقم هاتفك للمتابعة</p>
-        </div>
-
-        <div class="form-group">
-            <label for="phoneNumber">رقم الهاتف</label>
-            <input type="tel" id="phoneNumber" placeholder="0xxxxxxxxx أو +213xxxxxxxxx" maxlength="13">
-            <div class="phone-examples" style="margin-top: 8px; font-size: 12px; color: #718096; text-align: right;">
-                <div>🟡 جيزي: 077xxxxxxx أو 078xxxxxxx</div>
-                <div>🔵 موبيليس: 055xxxxxxx، 056xxxxxxx، 066xxxxxxx، 067xxxxxxx، 069xxxxxxx</div>
-                <div>🔴 أوريدو: 054xxxxxxx، 058xxxxxxx، 059xxxxxxx</div>
-            </div>
-        </div>
-
-        <div id="recaptcha-container"></div>
-<button class="btn" onclick="sendVerificationCode()">إرسال رمز التحقق</button>
-
-        <div class="message" id="loginMessage"></div>
+<div class="container">
+    <div class="logo">
+        <h1>🔐</h1>
+        <h1>تسجيل الدخول</h1>
+        <p>أدخل اسم المستخدم وكلمة السر</p>
     </div>
+
+    <div class="form-group">
+        <label for="username">اسم المستخدم</label>
+        <input type="text" id="username" placeholder="اختر اسم المستخدم" maxlength="20">
+    </div>
+
+    <div class="form-group">
+        <label for="password">كلمة السر</label>
+        <input type="password" id="password" placeholder="كلمة السر (3 أرقام و3 حروف على الأقل)">
+    </div>
+
+    <button class="btn" onclick="login()">تسجيل الدخول</button>
+
+    <div class="message" id="loginMessage"></div>
 </div>
 
-        <!-- صفحة التحقق من الرمز -->
+<!-- New login form will be inserted here -->
+
         <div id="verificationPage" class="page">
             <div class="logo">
                 <h1>🔐</h1>
@@ -1069,36 +1068,133 @@
 
     // ========== نهاية الكود الجديد ==========
 
-    // إعداد Firebase Auth للهاتف
-    function setupPhoneAuth() {
-    if (!window.auth) {
-        console.error("❌ Auth غير مهيأ بعد، تأكد من استدعاء setupPhoneAuth() بعد تحميل Firebase");
+function isValidPassword(password) {
+    const hasLetters = (password.match(/[a-zA-Z\u0621-\u064A]/g) || []).length >= 3;
+    const hasDigits = (password.match(/[0-9]/g) || []).length >= 3;
+    return password.length >= 6 && hasLetters && hasDigits;
+}
+
+async function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    if (!username || !password) {
+        showMessage('error', 'يرجى إدخال اسم المستخدم وكلمة السر', 'login');
         return;
     }
-    // إنشاء reCAPTCHA فقط إذا لم يكن موجود
-    if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(
-            window.auth,
-            'recaptcha-container',
-            {
-                size: 'invisible', // أو 'normal' إذا أردت ظهور الكابتشا
-                callback: (response) => {
-                    console.log("✅ reCAPTCHA تم التحقق منه:", response);
-                }
-            }
-        );
+
+    if (!isValidPassword(password)) {
+        showMessage('error', 'كلمة السر يجب أن تحتوي على 3 أحرف و3 أرقام على الأقل', 'login');
+        return;
+    }
+
+    const userRef = window.ref(window.db, `users/${username}`);
+    const snapshot = await window.get(userRef);
+
+    if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData.password === password) {
+            currentUser = { uid: username, ...userData };
+            currentRole = userData.role;
+            showMessage('success', 'تم تسجيل الدخول بنجاح!', 'login');
+            setTimeout(() => {
+                showPage('mapPage');
+                loadMap(userData.name || username);
+            }, 1000);
+        } else {
+            showMessage('error', 'كلمة السر غير صحيحة', 'login');
+        }
+    } else {
+        currentUser = { uid: username, password: password };
+        localStorage.setItem('tempPassword', password);
+        showPage('roleSelectionPage');
     }
 }
 
+function selectRole(role) {
+    document.querySelectorAll('.role-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.target.closest('.role-card').classList.add('selected');
+    currentRole = role;
+
+    if (role === 'rakib') {
+        showPage('passengerInfoPage');
+    } else {
+        showPage('driverInfoPage');
+    }
+}
+
+function submitPassengerInfo() {
+    const name = document.getElementById('passengerName').value.trim();
+    const age = document.getElementById('passengerAge').value;
+    const gender = document.getElementById('passengerGender').value;
+    const idCard = document.getElementById('passengerIdCard').files[0];
+
+    if (!name || !age || !gender || !idCard) {
+        showMessage('error', 'يرجى ملء جميع الحقول المطلوبة', 'passenger');
+        return;
+    }
+    if (age < 16 || age > 80) {
+        showMessage('error', 'العمر يجب أن يكون بين 16 و 80 سنة', 'passenger');
+        return;
+    }
+
+    window.set(window.ref(window.db, `users/${currentUser.uid}`), {
+        name, age: parseInt(age), gender,
+        role: 'rakib',
+        password: localStorage.getItem('tempPassword'),
+        profileComplete: true,
+        registeredAt: Date.now()
+    }).then(() => {
+        showMessage('success', 'تم حفظ معلوماتك بنجاح!', 'passenger');
+        setTimeout(() => {
+            showPage('mapPage');
+            loadMap(name);
+        }, 1000);
+    });
+}
+
+function startDriverMap() {
+    const name = document.getElementById('driverName').value.trim();
+    const age = document.getElementById('driverAge').value;
+    const carType = document.getElementById('carType').value.trim();
+    const carColor = document.getElementById('carColor').value.trim();
+    const plateNumber = document.getElementById('plateNumber').value.trim();
+    const driverLicense = document.getElementById('driverLicense').files[0];
+    const carRegistration = document.getElementById('carRegistration').files[0];
+    const declaration = document.getElementById('driverDeclaration').checked;
+
+    if (!name || !age || !carType || !carColor || !plateNumber || !driverLicense || !carRegistration || !declaration) {
+        showMessage('error', 'يرجى ملء جميع الحقول المطلوبة والموافقة على التعهد', 'driver');
+        return;
+    }
+    if (age < 18 || age > 70) {
+        showMessage('error', 'العمر يجب أن يكون بين 18 و 70 سنة', 'driver');
+        return;
+    }
+
+    window.set(window.ref(window.db, `users/${currentUser.uid}`), {
+        name, age: parseInt(age), carType, carColor, plateNumber,
+        role: 'sayeq',
+        password: localStorage.getItem('tempPassword'),
+        profileComplete: true,
+        registeredAt: Date.now()
+    }).then(() => {
+        showMessage('success', 'تم حفظ معلوماتك بنجاح!', 'driver');
+        setTimeout(() => {
+            showPage('mapPage');
+            loadMap(name);
+        }, 1000);
+    });
+}
+
+
+    // إعداد Firebase Auth للهاتف
+    
+
     // تحديث دالة إرسال رمز التحقق (استبدل الدالة الموجودة)
-    async function sendVerificationCode() {
-        const phoneInput = document.getElementById('phoneNumber');
-        const phoneNumber = phoneInput.value.trim();
-        
-        if (!phoneNumber) {
-            showMessage('error', 'يرجى إدخال رقم الهاتف', 'login');
-            return;
-        }
+    
 
         // التحقق من صحة رقم الهاتف الجزائري
         const validation = validateAlgerianPhoneNumber(phoneNumber);
@@ -1163,13 +1259,7 @@
     }
 
         // التحقق من الرمز
-        async function verifyCode() {
-            const code = document.getElementById('verificationCode').value.trim();
-            
-            if (!code || code.length !== 6) {
-                showMessage('error', 'يرجى إدخال رمز التحقق المكون من 6 أرقام', 'verification');
-                return;
-            }
+        
 
             if (!confirmationResult) {
                 showMessage('error', 'حدث خطأ. يرجى إعادة إرسال رمز التحقق', 'verification');
@@ -1227,15 +1317,7 @@
         }
 
         // إعادة إرسال الرمز
-        async function resendCode() {
-            const phoneNumber = document.getElementById('phoneDisplay').textContent;
-            
-            try {
-                showMessage('info', 'جاري إعادة إرسال رمز التحقق...', 'verification');
-                
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                }
+        
                 setupPhoneAuth();
 
                 confirmationResult = await window.signInWithPhoneNumber(window.auth, phoneNumber, window.recaptchaVerifier);
@@ -1250,16 +1332,7 @@
         }
 
         // بدء عداد إعادة الإرسال
-        function startResendTimer() {
-            resendCountdown = 60;
-            const resendBtn = document.getElementById('resendBtn');
-            const timerDiv = document.getElementById('resendTimer');
-            
-            resendBtn.disabled = true;
-            
-            resendTimer = setInterval(() => {
-                resendCountdown--;
-                timerDiv.textContent = `يمكنك إعادة الإرسال خلال ${resendCountdown} ثانية`;
+         ثانية`;
                 
                 if (resendCountdown <= 0) {
                     clearInterval(resendTimer);
@@ -1270,10 +1343,7 @@
         }
 
         // العودة للصفحة السابقة
-        function goBack() {
-            if (resendTimer) {
-                clearInterval(resendTimer);
-            }
+        
             showPage('loginPage');
         }
 
@@ -2134,6 +2204,7 @@
 </script>
 </body>
 </html>
+
 
 
 

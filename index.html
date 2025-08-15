@@ -602,6 +602,7 @@
                 <div>🔴 أوريدو: 054xxxxxxx، 058xxxxxxx، 059xxxxxxx</div>
             </div>
         </div>
+<div id="recaptcha-container"></div>
 
         <button class="btn" onclick="sendVerificationCode()">إرسال رمز التحقق</button>
 
@@ -1069,8 +1070,18 @@
 
     // إعداد Firebase Auth للهاتف
     function setupPhoneAuth() {
-        // ... باقي الكود الموجود
-    }
+    window.recaptchaVerifier = new RecaptchaVerifier(
+        'recaptcha-container', // لازم هذا العنصر يكون موجود في HTML
+        {
+            size: 'invisible', // أو 'normal'
+            callback: (response) => {
+                console.log("reCAPTCHA تم التحقق منه", response);
+            }
+        },
+        window.auth
+    );
+}
+
 
     // تحديث دالة إرسال رمز التحقق (استبدل الدالة الموجودة)
     async function sendVerificationCode() {
@@ -2116,5 +2127,3 @@
 </script>
 </body>
 </html>
-
-

@@ -585,27 +585,29 @@
 <body>
     <!-- صفحة تسجيل الدخول -->
     <div class="container">
-        <div id="loginPage" class="page active">
-            <div class="logo">
-                <h1>🚗</h1>
-                <h1>مشاركة الرحلات</h1>
-                <p>تطبيق آمن وسهل لمشاركة الرحلات</p>
-            </div>
-
-            <div class="form-group">
-                <label for="phoneNumber">📱 رقم الهاتف</label>
-                <input type="tel" id="phoneNumber" placeholder="+213xxxxxxxxx" dir="ltr">
-                <small style="color: #718096; font-size: 0.9em;">مثال: +213555123456</small>
-            </div>
-
-            <div id="recaptcha-container"></div>
-
-            <button class="btn phone-btn" onclick="sendVerificationCode()">
-                📱 إرسال رمز التحقق
-            </button>
-
-            <div class="message" id="loginMessage" style="display: none;"></div>
+<div id="loginPage" class="page active">
+    <div class="container">
+        <div class="logo">
+            <h1>🚗</h1>
+            <h1>مشاركة الرحلات</h1>
+            <p>أدخل رقم هاتفك للمتابعة</p>
         </div>
+
+        <div class="form-group">
+            <label for="phoneNumber">رقم الهاتف</label>
+            <input type="tel" id="phoneNumber" placeholder="0xxxxxxxxx أو +213xxxxxxxxx" maxlength="13">
+            <div class="phone-examples" style="margin-top: 8px; font-size: 12px; color: #718096; text-align: right;">
+                <div>🟡 جيزي: 077xxxxxxx أو 078xxxxxxx</div>
+                <div>🔵 موبيليس: 055xxxxxxx، 056xxxxxxx، 066xxxxxxx، 067xxxxxxx، 069xxxxxxx</div>
+                <div>🔴 أوريدو: 054xxxxxxx، 058xxxxxxx، 059xxxxxxx</div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="sendVerificationCode()">إرسال رمز التحقق</button>
+
+        <div class="message" id="loginMessage"></div>
+    </div>
+</div>
 
         <!-- صفحة التحقق من الرمز -->
         <div id="verificationPage" class="page">
@@ -869,126 +871,278 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
-    <script>
-        // متغيرات عامة
-        let currentUser = null;
-        let currentRole = null;
-        let currentMap = null;
-        let currentMarker = null;
-        let currentLocation = null;
-        let driversMarkers = [];
-        let passengersMarkers = [];
-        let routeControl = null;
-        let selectedDriver = null;
-        let currentTripRequestId = null;
-        let currentChatPartner = null;
-        let confirmationResult = null;
-        let resendTimer = null;
-        let resendCountdown = 60;
+<script>
+    // متغيرات عامة
+    let currentUser = null;
+    let currentRole = null;
+    let currentMap = null;
+    let currentMarker = null;
+    let currentLocation = null;
+    let driversMarkers = [];
+    let passengersMarkers = [];
+    let routeControl = null;
+    let selectedDriver = null;
+    let currentTripRequestId = null;
+    let currentChatPartner = null;
+    let confirmationResult = null;
+    let resendTimer = null;
+    let resendCountdown = 60;
 
-        // طبقات الخريطة
-        const mapLayers = {
-            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }),
-            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri'
-            })
+    // طبقات الخريطة
+    const mapLayers = {
+        osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }),
+        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        })
+    };
+
+    let currentMapLayer = mapLayers.osm;
+
+    // أيقونات الخريطة
+    const driverIcon = L.icon({
+        // ... باقي الكود
+    });
+
+    const passengerIcon = L.icon({
+        // ... باقي الكود
+    });
+
+    // ========== هنا ضع الكود الجديد ==========
+    
+    // تحديث دالة التحقق من رقم الهاتف الجزائري
+    function validateAlgerianPhoneNumber(phoneNumber) {
+        // إزالة المسافات والرموز الإضافية
+        const cleanNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
+        
+        // أنماط أرقام الهواتف الجزائرية
+        const patterns = {
+            // Djezzy (جيزي)
+            djezzy: /^(\+213|0)(77|78)[0-9]{7}$/,
+            
+            // Mobilis (موبيليس)
+            mobilis: /^(\+213|0)(55|56|66|67|69)[0-9]{7}$/,
+            
+            // Ooredoo (أوريدو)
+            ooredoo: /^(\+213|0)(54|58|59)[0-9]{7}$/
         };
-
-        let currentMapLayer = mapLayers.osm;
-
-        // أيقونات الخريطة
-        const driverIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM0Mjg1RjQiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPgo8cGF0aCBkPSJNMTkgN2gtMy4xNGwtMS4yNS0yLjVBMSAxIDAgMCAwIDEzLjc1IDRoLTMuNWExIDEgMCAwIDAtLjg2LjVMMTguMTQgN0g1YTEgMSAwIDAgMC0xIDF2OGExIDEgMCAwIDAgMSAxaDE0YTEgMSAwIDAgMCAxLTFWOGExIDEgMCAwIDAtMS0xek03IDEwaDJhMSAxIDAgMCAxIDAgMkg3YTEgMSAwIDAgMS0wLTJ6bTEwIDBoMmExIDEgMCAwIDEgMCAyaC0yYTEgMSAwIDAgMS0wLTJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4=',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-        });
-
-        const passengerIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNGNTY1NjUiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPgo8cGF0aCBkPSJNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+Cjwvc3ZnPgo8L3N2Zz4=',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-        });
-
-        // إعداد Firebase Auth للهاتف
-        function setupPhoneAuth() {
-            if (!window.RecaptchaVerifier) {
-                console.error('RecaptchaVerifier not loaded');
-                return;
+        
+        // التحقق من جميع الأنماط
+        for (const [network, pattern] of Object.entries(patterns)) {
+            if (pattern.test(cleanNumber)) {
+                return {
+                    isValid: true,
+                    network: network,
+                    formatted: formatPhoneNumber(cleanNumber)
+                };
             }
+        }
+        
+        return {
+            isValid: false,
+            network: null,
+            formatted: null
+        };
+    }
 
-            window.recaptchaVerifier = new window.RecaptchaVerifier(window.auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    console.log('reCAPTCHA solved');
-                },
-                'expired-callback': () => {
-                    console.log('reCAPTCHA expired');
+    // تنسيق رقم الهاتف
+    function formatPhoneNumber(phoneNumber) {
+        const cleanNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
+        
+        // تحويل إلى التنسيق الدولي
+        if (cleanNumber.startsWith('0')) {
+            return '+213' + cleanNumber.substring(1);
+        } else if (cleanNumber.startsWith('213')) {
+            return '+' + cleanNumber;
+        } else if (cleanNumber.startsWith('+213')) {
+            return cleanNumber;
+        }
+        
+        return '+213' + cleanNumber;
+    }
+
+    // الحصول على اسم الشبكة
+    function getNetworkName(network) {
+        const networks = {
+            djezzy: 'جيزي',
+            mobilis: 'موبيليس', 
+            ooredoo: 'أوريدو'
+        };
+        return networks[network] || 'غير معروف';
+    }
+
+    // الحصول على رمز الشبكة
+    function getNetworkEmoji(network) {
+        const emojis = {
+            djezzy: '🟡',
+            mobilis: '🔵',
+            ooredoo: '🔴'
+        };
+        return emojis[network] || '📱';
+    }
+
+    // عرض معاينة الشبكة
+    function showNetworkPreview(phoneNumber) {
+        const validation = validateAlgerianPhoneNumber(phoneNumber);
+        const previewDiv = document.getElementById('networkPreview');
+        
+        // إنشاء div المعاينة إذا لم يكن موجوداً
+        if (!previewDiv) {
+            const preview = document.createElement('div');
+            preview.id = 'networkPreview';
+            preview.style.cssText = `
+                margin-top: 10px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                text-align: center;
+                transition: all 0.3s ease;
+            `;
+            document.getElementById('phoneNumber').parentNode.appendChild(preview);
+        }
+        
+        const preview = document.getElementById('networkPreview');
+        
+        if (validation.isValid) {
+            preview.style.background = '#c6f6d5';
+            preview.style.color = '#22543d';
+            preview.style.border = '1px solid #9ae6b4';
+            preview.innerHTML = `${getNetworkEmoji(validation.network)} ${getNetworkName(validation.network)}`;
+            preview.style.display = 'block';
+        } else if (phoneNumber.length > 3) {
+            preview.style.background = '#fed7d7';
+            preview.style.color = '#742a2a';
+            preview.style.border = '1px solid #fc8181';
+            preview.innerHTML = '❌ رقم غير صحيح';
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    // تحديث مستمع حقل رقم الهاتف
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneInput = document.getElementById('phoneNumber');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, ''); // إزالة كل شيء عدا الأرقام
+                
+                // تنسيق تلقائي أثناء الكتابة
+                if (value.startsWith('213')) {
+                    value = '+' + value;
+                } else if (value.startsWith('0')) {
+                    // إذا بدأ بـ 0، نتركه كما هو للآن
+                    value = value;
+                } else if (value.length > 0 && !value.startsWith('0')) {
+                    // إذا لم يبدأ بـ 0 أو 213، نضيف 0
+                    value = '0' + value;
+                }
+                
+                // تحديد الحد الأقصى للطول
+                if (value.startsWith('+213')) {
+                    value = value.substring(0, 13); // +213xxxxxxxxx
+                } else if (value.startsWith('0')) {
+                    value = value.substring(0, 10); // 0xxxxxxxxx
+                }
+                
+                e.target.value = value;
+                
+                // عرض معاينة الشبكة
+                showNetworkPreview(value);
+            });
+
+            phoneInput.addEventListener('blur', function(e) {
+                // تنسيق نهائي عند فقدان التركيز
+                const value = e.target.value.trim();
+                if (value) {
+                    const validation = validateAlgerianPhoneNumber(value);
+                    if (validation.isValid) {
+                        e.target.value = validation.formatted;
+                    }
                 }
             });
         }
+    });
 
-        // إرسال رمز التحقق
-        async function sendVerificationCode() {
-            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    // ========== نهاية الكود الجديد ==========
+
+    // إعداد Firebase Auth للهاتف
+    function setupPhoneAuth() {
+        // ... باقي الكود الموجود
+    }
+
+    // تحديث دالة إرسال رمز التحقق (استبدل الدالة الموجودة)
+    async function sendVerificationCode() {
+        const phoneInput = document.getElementById('phoneNumber');
+        const phoneNumber = phoneInput.value.trim();
+        
+        if (!phoneNumber) {
+            showMessage('error', 'يرجى إدخال رقم الهاتف', 'login');
+            return;
+        }
+
+        // التحقق من صحة رقم الهاتف الجزائري
+        const validation = validateAlgerianPhoneNumber(phoneNumber);
+        
+        if (!validation.isValid) {
+            showMessage('error', 'يرجى إدخال رقم هاتف جزائري صحيح\n(جيزي: 077/078، موبيليس: 055/056/066/067/069، أوريدو: 054/058/059)', 'login');
+            return;
+        }
+
+        // تحديث حقل الإدخال بالتنسيق الصحيح
+        phoneInput.value = validation.formatted;
+
+        try {
+            showMessage('info', `جاري إرسال رمز التحقق إلى ${getNetworkName(validation.network)}...`, 'login');
             
-            if (!phoneNumber) {
-                showMessage('error', 'يرجى إدخال رقم الهاتف', 'login');
-                return;
+            if (!window.recaptchaVerifier) {
+                setupPhoneAuth();
             }
 
-            if (!phoneNumber.startsWith('+213')) {
-                showMessage('error', 'يرجى إدخال رقم هاتف جزائري صحيح يبدأ بـ +213', 'login');
-                return;
+            confirmationResult = await window.signInWithPhoneNumber(window.auth, validation.formatted, window.recaptchaVerifier);
+            
+            document.getElementById('phoneDisplay').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 16px; font-weight: bold;">${validation.formatted}</div>
+                    <div style="font-size: 12px; color: #667eea; margin-top: 5px;">
+                        ${getNetworkName(validation.network)} ${getNetworkEmoji(validation.network)}
+                    </div>
+                </div>
+            `;
+            
+            showPage('verificationPage');
+            startResendTimer();
+            showMessage('success', `تم إرسال رمز التحقق إلى ${getNetworkName(validation.network)} بنجاح!`, 'verification');
+            
+        } catch (error) {
+            console.error('Error sending verification code:', error);
+            let errorMessage = 'حدث خطأ في إرسال رمز التحقق';
+            
+            switch (error.code) {
+                case 'auth/invalid-phone-number':
+                    errorMessage = 'رقم الهاتف غير صحيح';
+                    break;
+                case 'auth/too-many-requests':
+                    errorMessage = 'تم إرسال عدد كبير من الطلبات. حاول مرة أخرى لاحقاً';
+                    break;
+                case 'auth/quota-exceeded':
+                    errorMessage = 'تم تجاوز الحد المسموح من الرسائل اليوم';
+                    break;
+                case 'auth/api-key-not-valid':
+                    errorMessage = 'خطأ في إعدادات التطبيق. يرجى المحاولة لاحقاً';
+                    break;
             }
-
-            if (phoneNumber.length !== 13) {
-                showMessage('error', 'رقم الهاتف يجب أن يكون 13 رقم (+213xxxxxxxxx)', 'login');
-                return;
-            }
-
-            try {
-                showMessage('info', 'جاري إرسال رمز التحقق...', 'login');
-                
-                if (!window.recaptchaVerifier) {
-                    setupPhoneAuth();
-                }
-
-                confirmationResult = await window.signInWithPhoneNumber(window.auth, phoneNumber, window.recaptchaVerifier);
-                
-                document.getElementById('phoneDisplay').textContent = phoneNumber;
-                showPage('verificationPage');
-                startResendTimer();
-                showMessage('success', 'تم إرسال رمز التحقق بنجاح!', 'verification');
-                
-            } catch (error) {
-                console.error('Error sending verification code:', error);
-                let errorMessage = 'حدث خطأ في إرسال رمز التحقق';
-                
-                switch (error.code) {
-                    case 'auth/invalid-phone-number':
-                        errorMessage = 'رقم الهاتف غير صحيح';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'تم إرسال عدد كبير من الطلبات. حاول مرة أخرى لاحقاً';
-                        break;
-                    case 'auth/quota-exceeded':
-                        errorMessage = 'تم تجاوز الحد المسموح من الرسائل';
-                        break;
-                }
-                
-                showMessage('error', errorMessage, 'login');
-                
-                // إعادة تعيين reCAPTCHA
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                    setupPhoneAuth();
-                }
+            
+            showMessage('error', errorMessage, 'login');
+            
+            // إعادة تعيين reCAPTCHA
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                setupPhoneAuth();
             }
         }
+    }
 
         // التحقق من الرمز
         async function verifyCode() {
@@ -1962,4 +2116,5 @@
 </script>
 </body>
 </html>
+
 

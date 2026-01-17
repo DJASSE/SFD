@@ -2,63 +2,99 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>أهلاً سيد عباس الميكانيكي</title>
+<title>لوحة طلبات سيد عباس</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+
 <style>
+*{box-sizing:border-box}
 body{
-    font-family: Arial;
-    background:#f4f4f4;
-    direction: rtl;
+    margin:0;
+    font-family:'Cairo',sans-serif;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    color:#fff;
+    direction:rtl;
 }
 
-.login,.container{
-    max-width:1100px;
+.login, .dashboard{
+    max-width:1200px;
     margin:60px auto;
-    background:#fff;
-    padding:25px;
-    border-radius:8px;
-    box-shadow:0 0 10px rgba(0,0,0,.1);
+    background:#ffffff10;
+    backdrop-filter:blur(10px);
+    padding:30px;
+    border-radius:16px;
+    box-shadow:0 20px 40px rgba(0,0,0,.3);
 }
 
-h2{text-align:center;margin-bottom:20px}
+h2{text-align:center;margin-bottom:25px}
 
 input{
     width:100%;
-    padding:12px;
-    margin-bottom:15px;
-}
-
-button{
-    padding:6px 10px;
+    padding:14px;
     border:none;
-    border-radius:4px;
-    cursor:pointer;
-    color:#fff;
+    border-radius:10px;
+    margin-bottom:15px;
+    font-size:16px;
 }
 
-.login button{background:#007bff;width:100%}
+.login button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#00c6ff;
+    color:#000;
+    font-size:18px;
+    cursor:pointer;
+}
 
 table{
     width:100%;
     border-collapse:collapse;
+    margin-top:20px;
 }
 
-th,td{
-    border:1px solid #ccc;
-    padding:8px;
-    text-align:center;
+th{
+    background:#00c6ff;
+    color:#000;
+    padding:12px;
 }
 
-th{background:#007bff;color:#fff}
+td{
+    padding:12px;
+    border-bottom:1px solid #ffffff30;
+}
+
+tr:hover{background:#ffffff15}
+
+button{
+    border:none;
+    padding:7px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    color:#fff;
+    margin:2px;
+    font-size:14px;
+}
 
 .call{background:#28a745}
 .accept{background:#17a2b8}
 .reject{background:#dc3545}
 .delete{background:#000}
+
+.badge{
+    padding:4px 8px;
+    border-radius:6px;
+    font-size:13px;
+}
+
+.pending{background:#ffc107;color:#000}
+.accepted{background:#28a745}
 
 .hidden{display:none}
 </style>
@@ -66,13 +102,15 @@ th{background:#007bff;color:#fff}
 
 <body>
 
+<audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
 <div class="login" id="loginBox">
     <h2>تسجيل الدخول</h2>
     <input type="password" id="password" placeholder="كلمة السر">
     <button onclick="login()">دخول</button>
 </div>
 
-<div class="container hidden" id="app">
+<div class="dashboard hidden" id="app">
     <h2>أهلاً سيد عباس الميكانيكي – هاهم طلباتك</h2>
 
     <table>
@@ -84,18 +122,17 @@ th{background:#007bff;color:#fff}
                 <th>المشكلة</th>
                 <th>التاريخ</th>
                 <th>الوقت</th>
-                <th>ملاحظات</th>
                 <th>الحالة</th>
                 <th>إجراءات</th>
             </tr>
         </thead>
-        <tbody id="data"></tbody>
+        <tbody id="rows"></tbody>
     </table>
 </div>
 
 <script>
-/* Firebase Config */
-const firebaseConfig = {
+/* Firebase */
+firebase.initializeApp({
   apiKey: "AIzaSyCLCSPOV1nuk5RvQiSJcjc18rxXbC0Ei9Y",
   authDomain: "bot-djasser-achlaf-4494.firebaseapp.com",
   databaseURL: "https://bot-djasser-achlaf-4494-default-rtdb.firebaseio.com",
@@ -103,68 +140,60 @@ const firebaseConfig = {
   storageBucket: "bot-djasser-achlaf-4494.firebasestorage.app",
   messagingSenderId: "500557963512",
   appId: "1:500557963512:web:a32bf5c21ba508662b5b0d"
-};
+});
 
-firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+let firstLoad = true;
 
 /* Login */
 function login(){
-    if(document.getElementById("password").value === "ABBAS VW1977"){
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
-        loadAppointments();
-    }else{
-        alert("كلمة السر غير صحيحة");
-    }
+    if(password.value === "ABBAS VW1977"){
+        loginBox.classList.add("hidden");
+        app.classList.remove("hidden");
+        listen();
+    }else alert("كلمة السر غير صحيحة");
 }
 
-/* Load Appointments */
-function loadAppointments(){
+/* Real-Time Listener + Sound */
+function listen(){
     const ref = db.ref("appointments");
-    ref.on("value", snapshot=>{
-        const tbody = document.getElementById("data");
-        tbody.innerHTML = "";
 
-        snapshot.forEach(child=>{
-            const d = child.val();
-            const id = child.key;
-
-            tbody.innerHTML += `
+    ref.on("value", snap=>{
+        rows.innerHTML="";
+        snap.forEach(c=>{
+            const d=c.val();
+            rows.innerHTML+=`
             <tr>
-                <td>${d.name || ""}</td>
-                <td>${d.phone || ""}</td>
-                <td>${d.car || ""}</td>
-                <td>${d.issue || ""}</td>
-                <td>${d.date || ""}</td>
-                <td>${d.time || ""}</td>
-                <td>${d.notes || ""}</td>
-                <td>${d.status || "pending"}</td>
+                <td>${d.name}</td>
+                <td>${d.phone}</td>
+                <td>${d.car}</td>
+                <td>${d.issue}</td>
+                <td>${d.date}</td>
+                <td>${d.time}</td>
+                <td><span class="badge ${d.status==="accepted"?"accepted":"pending"}">
+                    ${d.status||"pending"}
+                </span></td>
                 <td>
                     <button class="call" onclick="call('${d.phone}')">اتصال</button>
-                    <button class="accept" onclick="accept('${id}')">قبول</button>
-                    <button class="reject" onclick="remove('${id}')">رفض</button>
-                    <button class="delete" onclick="remove('${id}')">حذف</button>
+                    <button class="accept" onclick="accept('${c.key}')">قبول</button>
+                    <button class="reject" onclick="remove('${c.key}')">رفض</button>
                 </td>
             </tr>`;
         });
+        firstLoad=false;
+    });
+
+    ref.on("child_added", snap=>{
+        if(!firstLoad){
+            document.getElementById("alertSound").play();
+        }
     });
 }
 
 /* Actions */
-function call(phone){
-    window.location.href = "tel:" + phone;
-}
-
-function accept(id){
-    db.ref("appointments/"+id).update({status:"accepted"});
-}
-
-function remove(id){
-    if(confirm("هل أنت متأكد؟")){
-        db.ref("appointments/"+id).remove();
-    }
-}
+function call(p){location.href="tel:"+p}
+function accept(id){db.ref("appointments/"+id).update({status:"accepted"})}
+function remove(id){db.ref("appointments/"+id).remove()}
 </script>
 
 </body>

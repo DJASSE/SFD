@@ -1,154 +1,171 @@
-import { Authenticated, Unauthenticated, useQuery, useMutation } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { SignInForm } from "./SignInForm";
-import { SignOutButton } from "./SignOutButton";
-import { useEffect, useRef } from "react";
-import { Toaster } from "sonner";
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>أهلاً سيد عباس الميكانيكي</title>
 
-export default function App() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm p-4 flex justify-between items-center border-b">
-        <h2 className="text-xl font-semibold accent-text">Tank Battle</h2>
-        <SignOutButton />
-      </header>
-      <main className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-4xl mx-auto">
-          <Content />
-        </div>
-      </main>
-      <Toaster />
-    </div>
-  );
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+    direction: rtl;
 }
 
-function Content() {
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-
-  if (loggedInUser === undefined) {
-    return (
-      <div className="flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-8">
-      <div className="text-center">
-        <h1 className="text-5xl font-bold accent-text mb-4">Tank Battle</h1>
-        <Authenticated>
-          <GameCanvas userId={loggedInUser?._id} />
-        </Authenticated>
-        <Unauthenticated>
-          <p className="text-xl text-slate-600">Sign in to play</p>
-          <SignInForm />
-        </Unauthenticated>
-      </div>
-    </div>
-  );
+.login,.container{
+    max-width:1100px;
+    margin:60px auto;
+    background:#fff;
+    padding:25px;
+    border-radius:8px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
 }
 
-function GameCanvas({ userId }: { userId: string | undefined }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tanks = useQuery(api.tanks.getTanks) || [];
-  const shots = useQuery(api.tanks.getShots) || [];
-  
-  const spawnTank = useMutation(api.tanks.spawnTank);
-  const moveTank = useMutation(api.tanks.moveTank);
-  const shoot = useMutation(api.tanks.shoot);
+h2{text-align:center;margin-bottom:20px}
 
-  useEffect(() => {
-    spawnTank();
-  }, [spawnTank]);
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+}
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+button{
+    padding:6px 10px;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    color:#fff;
+}
 
-    // Clear canvas
-    ctx.fillStyle = "#eee";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+.login button{background:#007bff;width:100%}
 
-    // Draw tanks
-    tanks.forEach(tank => {
-      ctx.save();
-      ctx.translate(tank.x, tank.y);
-      ctx.rotate(tank.angle);
-      
-      // Tank body
-      ctx.fillStyle = "#4a5";
-      ctx.fillRect(-20, -15, 40, 30);
-      
-      // Tank turret
-      ctx.fillStyle = "#3a4";
-      ctx.fillRect(0, -5, 30, 10);
-      
-      ctx.restore();
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    border:1px solid #ccc;
+    padding:8px;
+    text-align:center;
+}
+
+th{background:#007bff;color:#fff}
+
+.call{background:#28a745}
+.accept{background:#17a2b8}
+.reject{background:#dc3545}
+.delete{background:#000}
+
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<div class="login" id="loginBox">
+    <h2>تسجيل الدخول</h2>
+    <input type="password" id="password" placeholder="كلمة السر">
+    <button onclick="login()">دخول</button>
+</div>
+
+<div class="container hidden" id="app">
+    <h2>أهلاً سيد عباس الميكانيكي – هاهم طلباتك</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+                <th>السيارة</th>
+                <th>المشكلة</th>
+                <th>التاريخ</th>
+                <th>الوقت</th>
+                <th>ملاحظات</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody id="data"></tbody>
+    </table>
+</div>
+
+<script>
+/* Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyCLCSPOV1nuk5RvQiSJcjc18rxXbC0Ei9Y",
+  authDomain: "bot-djasser-achlaf-4494.firebaseapp.com",
+  databaseURL: "https://bot-djasser-achlaf-4494-default-rtdb.firebaseio.com",
+  projectId: "bot-djasser-achlaf-4494",
+  storageBucket: "bot-djasser-achlaf-4494.firebasestorage.app",
+  messagingSenderId: "500557963512",
+  appId: "1:500557963512:web:a32bf5c21ba508662b5b0d"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* Login */
+function login(){
+    if(document.getElementById("password").value === "ABBAS VW1977"){
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        loadAppointments();
+    }else{
+        alert("كلمة السر غير صحيحة");
+    }
+}
+
+/* Load Appointments */
+function loadAppointments(){
+    const ref = db.ref("appointments");
+    ref.on("value", snapshot=>{
+        const tbody = document.getElementById("data");
+        tbody.innerHTML = "";
+
+        snapshot.forEach(child=>{
+            const d = child.val();
+            const id = child.key;
+
+            tbody.innerHTML += `
+            <tr>
+                <td>${d.name || ""}</td>
+                <td>${d.phone || ""}</td>
+                <td>${d.car || ""}</td>
+                <td>${d.issue || ""}</td>
+                <td>${d.date || ""}</td>
+                <td>${d.time || ""}</td>
+                <td>${d.notes || ""}</td>
+                <td>${d.status || "pending"}</td>
+                <td>
+                    <button class="call" onclick="call('${d.phone}')">اتصال</button>
+                    <button class="accept" onclick="accept('${id}')">قبول</button>
+                    <button class="reject" onclick="remove('${id}')">رفض</button>
+                    <button class="delete" onclick="remove('${id}')">حذف</button>
+                </td>
+            </tr>`;
+        });
     });
-
-    // Draw shots
-    ctx.fillStyle = "#f00";
-    shots.forEach(shot => {
-      ctx.beginPath();
-      ctx.arc(shot.x, shot.y, 3, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  }, [tanks, shots]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const tank = tanks.find(t => t.userId === userId);
-      if (!tank) return;
-
-      const speed = 5;
-      const rotateSpeed = 0.1;
-
-      switch(e.key) {
-        case "ArrowUp":
-          moveTank({
-            x: tank.x + Math.cos(tank.angle) * speed,
-            y: tank.y + Math.sin(tank.angle) * speed,
-            angle: tank.angle
-          });
-          break;
-        case "ArrowLeft":
-          moveTank({
-            x: tank.x,
-            y: tank.y,
-            angle: tank.angle - rotateSpeed
-          });
-          break;
-        case "ArrowRight":
-          moveTank({
-            x: tank.x,
-            y: tank.y,
-            angle: tank.angle + rotateSpeed
-          });
-          break;
-        case " ":
-          shoot({
-            x: tank.x + Math.cos(tank.angle) * 30,
-            y: tank.y + Math.sin(tank.angle) * 30,
-            angle: tank.angle
-          });
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tanks, moveTank, shoot, userId]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width={800}
-      height={600}
-      className="border border-gray-200 rounded-lg"
-    />
-  );
 }
+
+/* Actions */
+function call(phone){
+    window.location.href = "tel:" + phone;
+}
+
+function accept(id){
+    db.ref("appointments/"+id).update({status:"accepted"});
+}
+
+function remove(id){
+    if(confirm("هل أنت متأكد؟")){
+        db.ref("appointments/"+id).remove();
+    }
+}
+</script>
+
+</body>
+</html>

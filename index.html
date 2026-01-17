@@ -1,0 +1,154 @@
+import { Authenticated, Unauthenticated, useQuery, useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { SignInForm } from "./SignInForm";
+import { SignOutButton } from "./SignOutButton";
+import { useEffect, useRef } from "react";
+import { Toaster } from "sonner";
+
+export default function App() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm p-4 flex justify-between items-center border-b">
+        <h2 className="text-xl font-semibold accent-text">Tank Battle</h2>
+        <SignOutButton />
+      </header>
+      <main className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-4xl mx-auto">
+          <Content />
+        </div>
+      </main>
+      <Toaster />
+    </div>
+  );
+}
+
+function Content() {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+
+  if (loggedInUser === undefined) {
+    return (
+      <div className="flex justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="text-center">
+        <h1 className="text-5xl font-bold accent-text mb-4">Tank Battle</h1>
+        <Authenticated>
+          <GameCanvas userId={loggedInUser?._id} />
+        </Authenticated>
+        <Unauthenticated>
+          <p className="text-xl text-slate-600">Sign in to play</p>
+          <SignInForm />
+        </Unauthenticated>
+      </div>
+    </div>
+  );
+}
+
+function GameCanvas({ userId }: { userId: string | undefined }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tanks = useQuery(api.tanks.getTanks) || [];
+  const shots = useQuery(api.tanks.getShots) || [];
+  
+  const spawnTank = useMutation(api.tanks.spawnTank);
+  const moveTank = useMutation(api.tanks.moveTank);
+  const shoot = useMutation(api.tanks.shoot);
+
+  useEffect(() => {
+    spawnTank();
+  }, [spawnTank]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.fillStyle = "#eee";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw tanks
+    tanks.forEach(tank => {
+      ctx.save();
+      ctx.translate(tank.x, tank.y);
+      ctx.rotate(tank.angle);
+      
+      // Tank body
+      ctx.fillStyle = "#4a5";
+      ctx.fillRect(-20, -15, 40, 30);
+      
+      // Tank turret
+      ctx.fillStyle = "#3a4";
+      ctx.fillRect(0, -5, 30, 10);
+      
+      ctx.restore();
+    });
+
+    // Draw shots
+    ctx.fillStyle = "#f00";
+    shots.forEach(shot => {
+      ctx.beginPath();
+      ctx.arc(shot.x, shot.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }, [tanks, shots]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tank = tanks.find(t => t.userId === userId);
+      if (!tank) return;
+
+      const speed = 5;
+      const rotateSpeed = 0.1;
+
+      switch(e.key) {
+        case "ArrowUp":
+          moveTank({
+            x: tank.x + Math.cos(tank.angle) * speed,
+            y: tank.y + Math.sin(tank.angle) * speed,
+            angle: tank.angle
+          });
+          break;
+        case "ArrowLeft":
+          moveTank({
+            x: tank.x,
+            y: tank.y,
+            angle: tank.angle - rotateSpeed
+          });
+          break;
+        case "ArrowRight":
+          moveTank({
+            x: tank.x,
+            y: tank.y,
+            angle: tank.angle + rotateSpeed
+          });
+          break;
+        case " ":
+          shoot({
+            x: tank.x + Math.cos(tank.angle) * 30,
+            y: tank.y + Math.sin(tank.angle) * 30,
+            angle: tank.angle
+          });
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [tanks, moveTank, shoot, userId]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={800}
+      height={600}
+      className="border border-gray-200 rounded-lg"
+    />
+  );
+}
